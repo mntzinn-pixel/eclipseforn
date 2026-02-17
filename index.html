@@ -32,18 +32,27 @@
       const lista = document.getElementById("lista-produtos");
       lista.innerHTML = "";
 
-      db.collection("produtos").get().then(snapshot => {
+      db.collection("produtos").orderBy("categoria").get().then(snapshot => {
+        
+        let categoriaAtual = "";
+
         snapshot.forEach(doc => {
           const data = doc.data();
 
+          if (data.categoria !== categoriaAtual) {
+            categoriaAtual = data.categoria;
+            lista.innerHTML += `<h2 style="margin-top:30px;">${categoriaAtual}</h2>`;
+          }
+
           lista.innerHTML += `
-            <div style="background:white;padding:15px;margin:15px 0;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+            <div style="background:white;padding:15px;margin:10px 0;border-radius:10px;">
               <img src="${data.imagem}" style="width:100%;border-radius:10px;margin-bottom:10px;">
               <h3>${data.nome}</h3>
               <p><strong>R$ ${data.preco}</strong></p>
             </div>
           `;
         });
+
       });
     }
 
