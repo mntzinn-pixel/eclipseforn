@@ -9,170 +9,257 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body { font-family:Arial; background:#f4f6f9; padding:20px; }
-
-h1 { margin-bottom:10px; }
-
-.card {
-  background:white;
-  padding:15px;
-  margin-bottom:15px;
-  border-radius:10px;
-  box-shadow:0 3px 10px rgba(0,0,0,0.05);
-  position:relative;
+body{margin:0;font-family:Arial;background:#f1f5f9;}
+.topbar{background:#111;color:white;padding:15px;font-size:18px;}
+.layout{display:flex;}
+.sidebar{
+ width:230px;
+ background:#1e293b;
+ height:100vh;
+ color:white;
+ padding-top:20px;
 }
-
-.menu-btn {
-  position:absolute;
-  top:10px;
-  right:10px;
-  cursor:pointer;
-  font-size:20px;
+.sidebar div{
+ padding:15px;
+ cursor:pointer;
 }
-
-.dropdown {
-  display:none;
-  position:absolute;
-  right:10px;
-  top:35px;
-  background:white;
-  border:1px solid #ddd;
-  border-radius:5px;
-  box-shadow:0 3px 8px rgba(0,0,0,0.1);
+.sidebar div:hover{
+ background:#334155;
 }
-
-.dropdown div {
-  padding:8px 12px;
-  cursor:pointer;
+.content{
+ flex:1;
+ padding:20px;
 }
-
-.dropdown div:hover {
-  background:#f2f2f2;
+.card{
+ background:white;
+ padding:20px;
+ border-radius:10px;
+ margin-bottom:20px;
+ box-shadow:0 3px 10px rgba(0,0,0,0.05);
 }
-
-.dashboard {
-  background:white;
-  padding:20px;
-  border-radius:10px;
-  margin-bottom:20px;
-  box-shadow:0 3px 10px rgba(0,0,0,0.05);
+input,select{
+ width:100%;
+ padding:8px;
+ margin:5px 0;
+}
+button{
+ padding:6px 10px;
+ border:none;
+ border-radius:5px;
+ cursor:pointer;
+ margin-top:5px;
+}
+.btn{background:#111;color:white;}
+.btn-edit{background:orange;color:white;}
+.btn-del{background:red;color:white;}
+.hidden{display:none;}
+table{
+ width:100%;
+ border-collapse:collapse;
+}
+th,td{
+ padding:10px;
+ border-bottom:1px solid #ddd;
+ text-align:left;
 }
 </style>
 </head>
-
 <body>
 
-<h1>Painel Administrativo</h1>
+<div class="topbar">Painel Administrativo</div>
 
-<div class="dashboard">
-  <h2>Total Vendido: R$ <span id="totalVendido">0</span></h2>
-  <canvas id="grafico" height="100"></canvas>
+<div class="layout">
+
+<div class="sidebar">
+  <div onclick="mostrar('dashboard')">📊 Dashboard</div>
+  <div onclick="mostrar('pedidos')">📦 Pedidos</div>
+  <div onclick="mostrar('produtos')">🛍 Produtos</div>
+  <div onclick="mostrar('categorias')">🗂 Categorias</div>
 </div>
 
-<div id="lista"></div>
+<div class="content">
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="card">
+    <h2>Total Vendido: R$ <span id="totalVendido">0</span></h2>
+    <canvas id="grafico"></canvas>
+  </div>
+</div>
+
+<!-- PEDIDOS -->
+<div id="pedidos" class="hidden">
+  <div id="listaPedidos"></div>
+</div>
+
+<!-- PRODUTOS -->
+<div id="produtos" class="hidden">
+
+  <div class="card">
+    <h3>Criar / Editar Produto</h3>
+    <input id="pNome" placeholder="Nome">
+    <input id="pPreco" type="number" placeholder="Preço">
+    <input id="pImagem" placeholder="URL da imagem">
+    <select id="pCategoria"></select>
+    <input type="hidden" id="pId">
+    <button class="btn" onclick="salvarProduto()">Salvar</button>
+  </div>
+
+  <div class="card">
+    <h3>Lista de Produtos</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Preço</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaProdutos"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- CATEGORIAS -->
+<div id="categorias" class="hidden">
+
+  <div class="card">
+    <h3>Criar / Editar Categoria</h3>
+    <input id="cNome" placeholder="Nome da categoria">
+    <input type="hidden" id="cId">
+    <button class="btn" onclick="salvarCategoria()">Salvar</button>
+  </div>
+
+  <div class="card">
+    <h3>Lista de Categorias</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaCategorias"></tbody>
+    </table>
+  </div>
+
+</div>
+
+</div>
+</div>
 
 <script>
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDAnBNdufwLlMW4bZHK0mUgncmIezNSMTg",
-  authDomain: "minha-loja-digital1.firebaseapp.com",
-  projectId: "minha-loja-digital1",
-  storageBucket: "minha-loja-digital1.firebasestorage.app",
-  messagingSenderId: "119834670597",
-  appId: "1:119834670597:web:36edb828d7fdded6678e6c"
+const firebaseConfig={
+  apiKey:"SUA_API_KEY",
+  authDomain:"SEU_AUTH",
+  projectId:"SEU_PROJECT_ID"
 };
-
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db=firebase.firestore();
 
-let vendasMensais = {};
-
-function carregarPedidos(){
-  db.collection("pedidos").orderBy("data","desc").onSnapshot(snapshot=>{
-    const div = document.getElementById("lista");
-    div.innerHTML = "";
-    let totalGeral = 0;
-    vendasMensais = {};
-
-    snapshot.forEach(doc=>{
-      const p = doc.data();
-      totalGeral += p.total || 0;
-
-      let data = new Date(p.data.seconds*1000);
-      let mes = data.getMonth()+1 + "/" + data.getFullYear();
-
-      if(!vendasMensais[mes]){
-        vendasMensais[mes] = 0;
-      }
-      vendasMensais[mes] += p.total || 0;
-
-      div.innerHTML += `
-        <div class="card">
-          <div class="menu-btn" onclick="toggleMenu('${doc.id}')">⋮</div>
-
-          <div class="dropdown" id="menu-${doc.id}">
-            <div onclick="alterarStatus('${doc.id}')">Alterar Status</div>
-            <div onclick="excluirPedido('${doc.id}')">Excluir</div>
-          </div>
-
-          <strong>Data:</strong> ${data.toLocaleString()}<br>
-          <strong>Total:</strong> R$ ${p.total}<br>
-          <strong>Status:</strong> ${p.status}
-        </div>
-      `;
-    });
-
-    document.getElementById("totalVendido").innerText = totalGeral.toFixed(2);
-
-    criarGrafico();
-  });
+function mostrar(sec){
+ ["dashboard","pedidos","produtos","categorias"].forEach(s=>{
+   document.getElementById(s).classList.add("hidden");
+ });
+ document.getElementById(sec).classList.remove("hidden");
 }
 
-function toggleMenu(id){
-  let menu = document.getElementById("menu-"+id);
-  menu.style.display = menu.style.display === "block" ? "none" : "block";
+/* PRODUTOS */
+
+function salvarProduto(){
+ let id=pId.value;
+ let dados={
+   nome:pNome.value,
+   preco:parseFloat(pPreco.value),
+   imagem:pImagem.value,
+   categoria:pCategoria.value
+ };
+
+ if(id){
+   db.collection("produtos").doc(id).update(dados);
+ }else{
+   db.collection("produtos").add(dados);
+ }
+
+ pNome.value="";
+ pPreco.value="";
+ pImagem.value="";
+ pId.value="";
 }
 
-function excluirPedido(id){
-  if(confirm("Deseja excluir este pedido?")){
-    db.collection("pedidos").doc(id).delete();
-  }
+db.collection("produtos").onSnapshot(snapshot=>{
+ let tabela=document.getElementById("tabelaProdutos");
+ tabela.innerHTML="";
+ snapshot.forEach(doc=>{
+   let p=doc.data();
+   tabela.innerHTML+=`
+   <tr>
+     <td>${p.nome}</td>
+     <td>R$ ${p.preco}</td>
+     <td>
+       <button class="btn-edit" onclick="editarProduto('${doc.id}','${p.nome}','${p.preco}','${p.imagem}','${p.categoria}')">Editar</button>
+       <button class="btn-del" onclick="excluirProduto('${doc.id}')">Excluir</button>
+     </td>
+   </tr>`;
+ });
+});
+
+function editarProduto(id,nome,preco,imagem,categoria){
+ pId.value=id;
+ pNome.value=nome;
+ pPreco.value=preco;
+ pImagem.value=imagem;
+ pCategoria.value=categoria;
 }
 
-function alterarStatus(id){
-  let novo = prompt("Digite novo status:");
-  if(novo){
-    db.collection("pedidos").doc(id).update({status: novo});
-  }
+function excluirProduto(id){
+ db.collection("produtos").doc(id).delete();
 }
 
-let grafico;
+/* CATEGORIAS */
 
-function criarGrafico(){
+function salvarCategoria(){
+ let id=cId.value;
+ let dados={nome:cNome.value};
 
-  let labels = Object.keys(vendasMensais);
-  let valores = Object.values(vendasMensais);
+ if(id){
+   db.collection("categorias").doc(id).update(dados);
+ }else{
+   db.collection("categorias").add(dados);
+ }
 
-  if(grafico){
-    grafico.destroy();
-  }
-
-  const ctx = document.getElementById("grafico").getContext("2d");
-
-  grafico = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "Vendas por Mês",
-        data: valores
-      }]
-    }
-  });
+ cNome.value="";
+ cId.value="";
 }
 
-carregarPedidos();
+db.collection("categorias").onSnapshot(snapshot=>{
+ let tabela=document.getElementById("tabelaCategorias");
+ let select=document.getElementById("pCategoria");
+ tabela.innerHTML="";
+ select.innerHTML="";
+ snapshot.forEach(doc=>{
+   let c=doc.data();
+   tabela.innerHTML+=`
+   <tr>
+     <td>${c.nome}</td>
+     <td>
+       <button class="btn-edit" onclick="editarCategoria('${doc.id}','${c.nome}')">Editar</button>
+       <button class="btn-del" onclick="excluirCategoria('${doc.id}')">Excluir</button>
+     </td>
+   </tr>`;
+   select.innerHTML+=`<option value="${c.nome}">${c.nome}</option>`;
+ });
+});
 
+function editarCategoria(id,nome){
+ cId.value=id;
+ cNome.value=nome;
+}
+
+function excluirCategoria(id){
+ db.collection("categorias").doc(id).delete();
+}
 </script>
 
 </body>
