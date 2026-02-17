@@ -7,121 +7,124 @@
 
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
 
 <body style="font-family: Arial; padding:20px; background:#f5f5f5;">
 
-  <h1>🔐 Painel Admin</h1>
-
-  <div style="background:white;padding:20px;border-radius:10px;margin-bottom:30px;">
-    <h3>Adicionar Produto</h3>
-
-    <input type="text" id="nome" placeholder="Nome do produto"
-      style="padding:10px;width:100%;margin-bottom:10px;">
-
-    <input type="number" id="preco" placeholder="Preço"
-      style="padding:10px;width:100%;margin-bottom:10px;">
-
-    <input type="text" id="categoria" placeholder="Categoria"
-      style="padding:10px;width:100%;margin-bottom:10px;">
-
-    <input type="file" id="imagem" accept="image/*"
-      style="margin-bottom:10px;">
-
-    <button onclick="cadastrarProduto()"
-      style="padding:10px;width:100%;background:green;color:white;border:none;border-radius:5px;">
-      Cadastrar Produto
+  <div id="login-area">
+    <h2>🔐 Login Admin</h2>
+    <input type="email" id="email" placeholder="Email" style="padding:10px;width:100%;margin-bottom:10px;">
+    <input type="password" id="senha" placeholder="Senha" style="padding:10px;width:100%;margin-bottom:10px;">
+    <button onclick="login()" style="padding:10px;width:100%;background:black;color:white;border:none;">
+      Entrar
     </button>
   </div>
 
-  <div style="background:white;padding:20px;border-radius:10px;">
-    <h3>Produtos Cadastrados</h3>
+  <div id="admin-area" style="display:none;">
+    <h1>Painel Admin</h1>
+    <button onclick="logout()" style="margin-bottom:20px;">Sair</button>
+
+    <input type="text" id="nome" placeholder="Nome do produto" style="padding:10px;width:100%;margin-bottom:10px;">
+    <input type="number" id="preco" placeholder="Preço" style="padding:10px;width:100%;margin-bottom:10px;">
+    <input type="text" id="categoria" placeholder="Categoria" style="padding:10px;width:100%;margin-bottom:10px;">
+    <input type="file" id="imagem" accept="image/*" style="margin-bottom:10px;">
+    <button onclick="cadastrarProduto()" style="padding:10px;width:100%;background:green;color:white;border:none;">
+      Cadastrar
+    </button>
+
+    <hr>
     <div id="lista-admin"></div>
   </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDAnBNdufwLlMW4bZHK0mUgncmIezNSMTg",
-      authDomain: "minha-loja-digital1.firebaseapp.com",
-      projectId: "minha-loja-digital1",
-      storageBucket: "minha-loja-digital1.firebasestorage.app",
-      messagingSenderId: "119834670597",
-      appId: "1:119834670597:web:36edb828d7fdded6678e6c"
-    };
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDAnBNdufwLlMW4bZHK0mUgncmIezNSMTg",
+  authDomain: "minha-loja-digital1.firebaseapp.com",
+  projectId: "minha-loja-digital1",
+  storageBucket: "minha-loja-digital1.firebasestorage.app",
+  messagingSenderId: "119834670597",
+  appId: "1:119834670597:web:36edb828d7fdded6678e6c"
+};
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
 
-    function cadastrarProduto() {
-      const nome = document.getElementById("nome").value;
-      const preco = document.getElementById("preco").value;
-      const categoria = document.getElementById("categoria").value;
-      const arquivo = document.getElementById("imagem").files[0];
+const db = firebase.firestore();
+const auth = firebase.auth();
 
-      if (!nome || !preco || !categoria || !arquivo) {
-        alert("Preencha todos os campos!");
-        return;
-      }
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById("login-area").style.display = "none";
+    document.getElementById("admin-area").style.display = "block";
+    carregarAdmin();
+  } else {
+    document.getElementById("login-area").style.display = "block";
+    document.getElementById("admin-area").style.display = "none";
+  }
+});
 
-      const reader = new FileReader();
+function login() {
+  const email = document.getElementById("email").value;
+  const senha = document.getElementById("senha").value;
 
-      reader.onload = function(e) {
-        db.collection("produtos").add({
-          nome: nome,
-          preco: parseFloat(preco),
-          categoria: categoria,
-          imagem: e.target.result,
-          criadoEm: new Date()
-        }).then(() => {
-          alert("Produto cadastrado!");
-          document.getElementById("nome").value = "";
-          document.getElementById("preco").value = "";
-          document.getElementById("categoria").value = "";
-          document.getElementById("imagem").value = "";
-          carregarAdmin();
-        });
-      };
+  auth.signInWithEmailAndPassword(email, senha)
+    .catch(error => alert(error.message));
+}
 
-      reader.readAsDataURL(arquivo);
-    }
+function logout() {
+  auth.signOut();
+}
 
-    function excluirProduto(id) {
-      if (confirm("Tem certeza que deseja excluir?")) {
-        db.collection("produtos").doc(id).delete().then(() => {
-          carregarAdmin();
-        });
-      }
-    }
+function cadastrarProduto() {
+  const nome = document.getElementById("nome").value;
+  const preco = document.getElementById("preco").value;
+  const categoria = document.getElementById("categoria").value;
+  const arquivo = document.getElementById("imagem").files[0];
 
-    function carregarAdmin() {
-      const lista = document.getElementById("lista-admin");
-      lista.innerHTML = "";
+  if (!nome || !preco || !categoria || !arquivo) {
+    alert("Preencha todos os campos!");
+    return;
+  }
 
-      db.collection("produtos").orderBy("criadoEm", "desc").get()
-      .then(snapshot => {
-        snapshot.forEach(doc => {
-          const data = doc.data();
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    db.collection("produtos").add({
+      nome,
+      preco: parseFloat(preco),
+      categoria,
+      imagem: e.target.result,
+      criadoEm: new Date()
+    }).then(() => {
+      carregarAdmin();
+    });
+  };
+  reader.readAsDataURL(arquivo);
+}
 
-          lista.innerHTML += `
-            <div style="border:1px solid #ddd;padding:10px;margin-bottom:10px;border-radius:8px;display:flex;gap:10px;align-items:center;">
-              <img src="${data.imagem}" style="width:70px;height:70px;object-fit:cover;border-radius:5px;">
-              <div style="flex:1;">
-                <strong>${data.nome}</strong><br>
-                Categoria: ${data.categoria}<br>
-                R$ ${data.preco}
-              </div>
-              <button onclick="excluirProduto('${doc.id}')"
-                style="background:red;color:white;border:none;padding:5px 10px;border-radius:5px;">
-                Excluir
-              </button>
-            </div>
-          `;
-        });
-      });
-    }
+function excluirProduto(id) {
+  db.collection("produtos").doc(id).delete().then(() => {
+    carregarAdmin();
+  });
+}
 
-    document.addEventListener("DOMContentLoaded", carregarAdmin);
-  </script>
+function carregarAdmin() {
+  const lista = document.getElementById("lista-admin");
+  lista.innerHTML = "";
+
+  db.collection("produtos").get().then(snapshot => {
+    snapshot.forEach(doc => {
+      const data = doc.data();
+
+      lista.innerHTML += `
+        <div style="background:white;padding:10px;margin:10px 0;border-radius:6px;">
+          ${data.nome} - R$ ${data.preco}
+          <button onclick="excluirProduto('${doc.id}')" style="background:red;color:white;border:none;">Excluir</button>
+        </div>
+      `;
+    });
+  });
+}
+</script>
 
 </body>
 </html>
