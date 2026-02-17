@@ -1,41 +1,122 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Admin - Minha Loja</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Admin - Minha Loja</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  margin:0;
+  background:#f4f6f9;
+}
+
+header {
+  background:#111;
+  color:white;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.container {
+  padding:20px;
+  max-width:1000px;
+  margin:auto;
+}
+
+.card {
+  background:white;
+  padding:20px;
+  border-radius:8px;
+  margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+
+input {
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+}
+
+button {
+  padding:8px 12px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+
+.btn-green { background:green; color:white; }
+.btn-red { background:red; color:white; }
+.btn-dark { background:black; color:white; }
+
+table {
+  width:100%;
+  border-collapse:collapse;
+}
+
+th, td {
+  padding:10px;
+  border-bottom:1px solid #ddd;
+  text-align:left;
+}
+</style>
 </head>
 
-<body style="font-family: Arial; padding:20px; background:#f5f5f5;">
+<body>
 
-  <div id="login-area">
+<div id="login-area" class="container">
+  <div class="card">
     <h2>🔐 Login Admin</h2>
-    <input type="email" id="email" placeholder="Email" style="padding:10px;width:100%;margin-bottom:10px;">
-    <input type="password" id="senha" placeholder="Senha" style="padding:10px;width:100%;margin-bottom:10px;">
-    <button onclick="login()" style="padding:10px;width:100%;background:black;color:white;border:none;">
-      Entrar
-    </button>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="senha" placeholder="Senha">
+    <button onclick="login()" class="btn-dark">Entrar</button>
   </div>
+</div>
 
-  <div id="admin-area" style="display:none;">
-    <h1>Painel Admin</h1>
-    <button onclick="logout()" style="margin-bottom:20px;">Sair</button>
+<div id="admin-area" style="display:none;">
+  <header>
+    <h2>Painel Administrativo</h2>
+    <button onclick="logout()" class="btn-red">Sair</button>
+  </header>
 
-    <input type="text" id="nome" placeholder="Nome do produto" style="padding:10px;width:100%;margin-bottom:10px;">
-    <input type="number" id="preco" placeholder="Preço" style="padding:10px;width:100%;margin-bottom:10px;">
-    <input type="text" id="categoria" placeholder="Categoria" style="padding:10px;width:100%;margin-bottom:10px;">
-    <input type="file" id="imagem" accept="image/*" style="margin-bottom:10px;">
-    <button onclick="cadastrarProduto()" style="padding:10px;width:100%;background:green;color:white;border:none;">
-      Cadastrar
-    </button>
+  <div class="container">
 
-    <hr>
-    <div id="lista-admin"></div>
+    <div class="card">
+      <h3>Adicionar Produto</h3>
+      <input type="text" id="nome" placeholder="Nome do produto">
+      <input type="number" id="preco" placeholder="Preço">
+      <input type="text" id="categoria" placeholder="Categoria">
+      <input type="file" id="imagem" accept="image/*">
+      <button onclick="cadastrarProduto()" class="btn-green">
+        Cadastrar Produto
+      </button>
+    </div>
+
+    <div class="card">
+      <h3>Produtos Cadastrados</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Imagem</th>
+            <th>Nome</th>
+            <th>Categoria</th>
+            <th>Preço</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="lista-admin"></tbody>
+      </table>
+    </div>
+
   </div>
+</div>
 
 <script>
 const firebaseConfig = {
@@ -64,11 +145,10 @@ auth.onAuthStateChanged(user => {
 });
 
 function login() {
-  const email = document.getElementById("email").value;
-  const senha = document.getElementById("senha").value;
-
-  auth.signInWithEmailAndPassword(email, senha)
-    .catch(error => alert(error.message));
+  auth.signInWithEmailAndPassword(
+    document.getElementById("email").value,
+    document.getElementById("senha").value
+  ).catch(e => alert(e.message));
 }
 
 function logout() {
@@ -95,6 +175,10 @@ function cadastrarProduto() {
       imagem: e.target.result,
       criadoEm: new Date()
     }).then(() => {
+      document.getElementById("nome").value = "";
+      document.getElementById("preco").value = "";
+      document.getElementById("categoria").value = "";
+      document.getElementById("imagem").value = "";
       carregarAdmin();
     });
   };
@@ -102,24 +186,33 @@ function cadastrarProduto() {
 }
 
 function excluirProduto(id) {
-  db.collection("produtos").doc(id).delete().then(() => {
-    carregarAdmin();
-  });
+  if (confirm("Excluir produto?")) {
+    db.collection("produtos").doc(id).delete().then(() => {
+      carregarAdmin();
+    });
+  }
 }
 
 function carregarAdmin() {
   const lista = document.getElementById("lista-admin");
   lista.innerHTML = "";
 
-  db.collection("produtos").get().then(snapshot => {
+  db.collection("produtos").orderBy("criadoEm", "desc")
+  .get().then(snapshot => {
     snapshot.forEach(doc => {
-      const data = doc.data();
-
+      const d = doc.data();
       lista.innerHTML += `
-        <div style="background:white;padding:10px;margin:10px 0;border-radius:6px;">
-          ${data.nome} - R$ ${data.preco}
-          <button onclick="excluirProduto('${doc.id}')" style="background:red;color:white;border:none;">Excluir</button>
-        </div>
+        <tr>
+          <td><img src="${d.imagem}" width="50"></td>
+          <td>${d.nome}</td>
+          <td>${d.categoria}</td>
+          <td>R$ ${d.preco}</td>
+          <td>
+            <button onclick="excluirProduto('${doc.id}')" class="btn-red">
+              Excluir
+            </button>
+          </td>
+        </tr>
       `;
     });
   });
