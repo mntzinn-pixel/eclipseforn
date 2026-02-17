@@ -1,2 +1,8 @@
-# meu-primeiro-site
-Projeto do meu site em HTML e CSS
+# Meu Primeiro Site
+
+Projeto simples feito em HTML, CSS e JavaScript.
+
+## Tecnologias usadas
+- HTML
+- CSS
+- JavaScript
