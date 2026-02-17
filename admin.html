@@ -19,16 +19,13 @@
   
   <input type="number" id="preco" placeholder="Preço" style="padding:10px;width:100%;margin-bottom:10px;">
 
-  <select id="categoria" style="padding:10px;width:100%;margin-bottom:10px;">
-    <option value="">Selecione categoria</option>
-    <option value="Roupas">Roupas</option>
-    <option value="Calçados">Calçados</option>
-    <option value="Acessórios">Acessórios</option>
-  </select>
+  <input type="text" id="categoria" placeholder="Digite a categoria (ex: Promoção)" 
+    style="padding:10px;width:100%;margin-bottom:10px;">
 
   <input type="file" id="imagem" accept="image/*" style="margin-bottom:10px;">
   
-  <button onclick="cadastrarProduto()" style="padding:10px;width:100%;background:green;color:white;border:none;border-radius:5px;margin-bottom:30px;">
+  <button onclick="cadastrarProduto()" 
+    style="padding:10px;width:100%;background:green;color:white;border:none;border-radius:5px;">
     Cadastrar Produto
   </button>
 
@@ -48,7 +45,7 @@
     function cadastrarProduto() {
       const nome = document.getElementById("nome").value;
       const preco = document.getElementById("preco").value;
-      const categoria = document.getElementById("categoria").value;
+      const categoria = document.getElementById("categoria").value.trim();
       const arquivo = document.getElementById("imagem").files[0];
 
       if (!nome || !preco || !categoria || !arquivo) {
@@ -59,13 +56,11 @@
       const reader = new FileReader();
 
       reader.onload = function(e) {
-        const imagemBase64 = e.target.result;
-
         db.collection("produtos").add({
           nome: nome,
           preco: parseFloat(preco),
           categoria: categoria,
-          imagem: imagemBase64,
+          imagem: e.target.result,
           criadoEm: new Date()
         }).then(() => {
           alert("Produto cadastrado!");
