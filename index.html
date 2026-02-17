@@ -1,143 +1,203 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Minha Loja</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Minha Loja Digital</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<style>
+body {
+  margin:0;
+  font-family:Arial;
+  background:#f4f6f9;
+}
+
+header {
+  background:#111;
+  color:white;
+  padding:15px;
+  text-align:center;
+  font-size:20px;
+  font-weight:bold;
+}
+
+.banner {
+  background:linear-gradient(135deg,#000,#333);
+  color:white;
+  text-align:center;
+  padding:40px 20px;
+}
+
+.banner h1 {
+  margin:0;
+  font-size:28px;
+}
+
+.container {
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
+}
+
+.filtros {
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.filtros button {
+  padding:8px 15px;
+  margin:5px;
+  border:none;
+  border-radius:20px;
+  cursor:pointer;
+  background:#ddd;
+}
+
+.filtros button:hover {
+  background:#111;
+  color:white;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:20px;
+}
+
+.card {
+  background:white;
+  border-radius:10px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.05);
+  overflow:hidden;
+  transition:0.2s;
+}
+
+.card:hover {
+  transform:scale(1.03);
+}
+
+.card img {
+  width:100%;
+  height:200px;
+  object-fit:cover;
+}
+
+.card-body {
+  padding:15px;
+}
+
+.card-body h3 {
+  margin:0 0 5px;
+  font-size:16px;
+}
+
+.card-body p {
+  margin:5px 0;
+  font-weight:bold;
+}
+
+.card-body button {
+  width:100%;
+  padding:10px;
+  background:#111;
+  color:white;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+
+.card-body button:hover {
+  background:#333;
+}
+</style>
 </head>
 
-<body style="font-family: Arial; margin:0; background:#f2f2f2;">
+<body>
 
-  <header style="background:black;color:white;padding:15px;text-align:center;">
-    <h1>🛍 Minha Loja</h1>
-  </header>
+<header>🛍 Minha Loja Digital</header>
 
-  <div style="padding:20px;">
+<div class="banner">
+  <h1>Os Melhores Produtos Para Você</h1>
+  <p>Qualidade • Segurança • Entrega Rápida</p>
+</div>
 
-    <h2>Produtos</h2>
-    <div id="lista-produtos"></div>
+<div class="container">
 
-    <hr style="margin:40px 0;">
+  <div class="filtros" id="filtros"></div>
 
-    <h2>🛒 Carrinho</h2>
-    <div id="carrinho"></div>
-    <h3 id="total">Total: R$ 0</h3>
+  <div class="grid" id="lista"></div>
 
-    <button onclick="finalizarPedido()" 
-      style="background:green;color:white;border:none;padding:12px;width:100%;border-radius:6px;font-size:16px;">
-      Finalizar Pedido no WhatsApp
-    </button>
+</div>
 
-  </div>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDAnBNdufwLlMW4bZHK0mUgncmIezNSMTg",
+  authDomain: "minha-loja-digital1.firebaseapp.com",
+  projectId: "minha-loja-digital1",
+  storageBucket: "minha-loja-digital1.firebasestorage.app",
+  messagingSenderId: "119834670597",
+  appId: "1:119834670597:web:36edb828d7fdded6678e6c"
+};
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDAnBNdufwLlMW4bZHK0mUgncmIezNSMTg",
-      authDomain: "minha-loja-digital1.firebaseapp.com",
-      projectId: "minha-loja-digital1",
-      storageBucket: "minha-loja-digital1.firebasestorage.app",
-      messagingSenderId: "119834670597",
-      appId: "1:119834670597:web:36edb828d7fdded6678e6c"
-    };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+let produtos = [];
 
-    let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
-
-    function salvarCarrinho() {
-      localStorage.setItem("carrinho", JSON.stringify(carrinho));
-    }
-
-    function carregarProdutos() {
-      const lista = document.getElementById("lista-produtos");
-      lista.innerHTML = "";
-
-      db.collection("produtos").get().then(snapshot => {
-        snapshot.forEach(doc => {
-          const data = doc.data();
-
-          lista.innerHTML += `
-            <div style="background:white;padding:15px;margin:10px 0;border-radius:10px;">
-              <img src="${data.imagem}" style="width:100%;border-radius:10px;margin-bottom:10px;">
-              <h3>${data.nome}</h3>
-              <p><strong>R$ ${data.preco}</strong></p>
-              <button onclick="adicionarCarrinho('${data.nome}', ${data.preco})"
-                style="background:black;color:white;border:none;padding:8px 12px;border-radius:5px;">
-                Adicionar ao Carrinho
-              </button>
-            </div>
-          `;
-        });
-      });
-    }
-
-    function adicionarCarrinho(nome, preco) {
-      carrinho.push({ nome, preco });
-      salvarCarrinho();
-      atualizarCarrinho();
-    }
-
-    function removerItem(index) {
-      carrinho.splice(index, 1);
-      salvarCarrinho();
-      atualizarCarrinho();
-    }
-
-    function atualizarCarrinho() {
-      const div = document.getElementById("carrinho");
-      div.innerHTML = "";
-
-      let total = 0;
-
-      carrinho.forEach((item, index) => {
-        total += item.preco;
-
-        div.innerHTML += `
-          <div style="background:white;padding:10px;margin:5px 0;border-radius:5px;display:flex;justify-content:space-between;">
-            ${item.nome} - R$ ${item.preco}
-            <button onclick="removerItem(${index})"
-              style="background:red;color:white;border:none;border-radius:4px;">
-              X
-            </button>
-          </div>
-        `;
-      });
-
-      document.getElementById("total").innerText = 
-        "Total: R$ " + total.toFixed(2);
-    }
-
-    function finalizarPedido() {
-      if (carrinho.length === 0) {
-        alert("Carrinho vazio!");
-        return;
-      }
-
-      let mensagem = "Olá, quero fazer um pedido:%0A%0A";
-      let total = 0;
-
-      carrinho.forEach(item => {
-        mensagem += "- " + item.nome + " - R$ " + item.preco + "%0A";
-        total += item.preco;
-      });
-
-      mensagem += "%0ATotal: R$ " + total.toFixed(2);
-
-      const numero = "5531993178577"; // SEU NÚMERO COM DDI
-      const url = "https://wa.me/" + numero + "?text=" + mensagem;
-
-      window.open(url, "_blank");
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      carregarProdutos();
-      atualizarCarrinho();
+function carregarProdutos() {
+  db.collection("produtos").get().then(snapshot => {
+    produtos = [];
+    snapshot.forEach(doc => {
+      produtos.push(doc.data());
     });
-  </script>
+    criarFiltros();
+    mostrarProdutos(produtos);
+  });
+}
+
+function criarFiltros() {
+  const categorias = [...new Set(produtos.map(p => p.categoria))];
+  const filtroDiv = document.getElementById("filtros");
+
+  filtroDiv.innerHTML = '<button onclick="mostrarProdutos(produtos)">Todos</button>';
+
+  categorias.forEach(cat => {
+    filtroDiv.innerHTML += `
+      <button onclick="filtrar('${cat}')">${cat}</button>
+    `;
+  });
+}
+
+function filtrar(categoria) {
+  const filtrados = produtos.filter(p => p.categoria === categoria);
+  mostrarProdutos(filtrados);
+}
+
+function mostrarProdutos(lista) {
+  const div = document.getElementById("lista");
+  div.innerHTML = "";
+
+  lista.forEach(p => {
+    div.innerHTML += `
+      <div class="card">
+        <img src="${p.imagem}">
+        <div class="card-body">
+          <h3>${p.nome}</h3>
+          <p>R$ ${p.preco}</p>
+          <button onclick="alert('Produto adicionado ao carrinho!')">
+            Adicionar ao Carrinho
+          </button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+carregarProdutos();
+</script>
 
 </body>
 </html>
