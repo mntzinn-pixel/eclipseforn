@@ -3,19 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <title>Painel Admin</title>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 body { font-family:Arial; background:#f4f6f9; padding:20px; }
-.card { background:white; padding:15px; margin-bottom:15px; border-radius:8px; box-shadow:0 3px 10px rgba(0,0,0,0.05); }
-select { padding:5px; }
+
+h1 { margin-bottom:10px; }
+
+.card {
+  background:white;
+  padding:15px;
+  margin-bottom:15px;
+  border-radius:10px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.05);
+  position:relative;
+}
+
+.menu-btn {
+  position:absolute;
+  top:10px;
+  right:10px;
+  cursor:pointer;
+  font-size:20px;
+}
+
+.dropdown {
+  display:none;
+  position:absolute;
+  right:10px;
+  top:35px;
+  background:white;
+  border:1px solid #ddd;
+  border-radius:5px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.1);
+}
+
+.dropdown div {
+  padding:8px 12px;
+  cursor:pointer;
+}
+
+.dropdown div:hover {
+  background:#f2f2f2;
+}
+
+.dashboard {
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  margin-bottom:20px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.05);
+}
 </style>
 </head>
 
 <body>
 
-<h1>Painel de Pedidos</h1>
-<h2>Total Vendido: R$ <span id="totalVendido">0</span></h2>
+<h1>Painel Administrativo</h1>
+
+<div class="dashboard">
+  <h2>Total Vendido: R$ <span id="totalVendido">0</span></h2>
+  <canvas id="grafico" height="100"></canvas>
+</div>
 
 <div id="lista"></div>
 
@@ -33,36 +85,90 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+let vendasMensais = {};
+
 function carregarPedidos(){
   db.collection("pedidos").orderBy("data","desc").onSnapshot(snapshot=>{
     const div = document.getElementById("lista");
     div.innerHTML = "";
     let totalGeral = 0;
+    vendasMensais = {};
 
     snapshot.forEach(doc=>{
       const p = doc.data();
       totalGeral += p.total || 0;
 
+      let data = new Date(p.data.seconds*1000);
+      let mes = data.getMonth()+1 + "/" + data.getFullYear();
+
+      if(!vendasMensais[mes]){
+        vendasMensais[mes] = 0;
+      }
+      vendasMensais[mes] += p.total || 0;
+
       div.innerHTML += `
         <div class="card">
-          <strong>Data:</strong> ${new Date(p.data.seconds*1000).toLocaleString()}<br>
+          <div class="menu-btn" onclick="toggleMenu('${doc.id}')">⋮</div>
+
+          <div class="dropdown" id="menu-${doc.id}">
+            <div onclick="alterarStatus('${doc.id}')">Alterar Status</div>
+            <div onclick="excluirPedido('${doc.id}')">Excluir</div>
+          </div>
+
+          <strong>Data:</strong> ${data.toLocaleString()}<br>
           <strong>Total:</strong> R$ ${p.total}<br>
-          <strong>Status:</strong>
-          <select onchange="atualizarStatus('${doc.id}', this.value)">
-            <option ${p.status=="Novo"?"selected":""}>Novo</option>
-            <option ${p.status=="Em andamento"?"selected":""}>Em andamento</option>
-            <option ${p.status=="Finalizado"?"selected":""}>Finalizado</option>
-          </select>
+          <strong>Status:</strong> ${p.status}
         </div>
       `;
     });
 
     document.getElementById("totalVendido").innerText = totalGeral.toFixed(2);
+
+    criarGrafico();
   });
 }
 
-function atualizarStatus(id, status){
-  db.collection("pedidos").doc(id).update({status: status});
+function toggleMenu(id){
+  let menu = document.getElementById("menu-"+id);
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+function excluirPedido(id){
+  if(confirm("Deseja excluir este pedido?")){
+    db.collection("pedidos").doc(id).delete();
+  }
+}
+
+function alterarStatus(id){
+  let novo = prompt("Digite novo status:");
+  if(novo){
+    db.collection("pedidos").doc(id).update({status: novo});
+  }
+}
+
+let grafico;
+
+function criarGrafico(){
+
+  let labels = Object.keys(vendasMensais);
+  let valores = Object.values(vendasMensais);
+
+  if(grafico){
+    grafico.destroy();
+  }
+
+  const ctx = document.getElementById("grafico").getContext("2d");
+
+  grafico = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Vendas por Mês",
+        data: valores
+      }]
+    }
+  });
 }
 
 carregarPedidos();
