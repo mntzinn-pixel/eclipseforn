@@ -5,17 +5,18 @@
   <title>Admin - Minha Loja</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 
-<body style="font-family: Arial; margin:0; padding:20px; background:#f5f5f5;">
+<body style="font-family: Arial; padding:20px; background:#f5f5f5;">
 
   <h1>🔐 Painel Admin</h1>
 
   <input type="text" id="nome" placeholder="Nome do produto" style="padding:10px;width:100%;margin-bottom:10px;">
   <input type="number" id="preco" placeholder="Preço" style="padding:10px;width:100%;margin-bottom:10px;">
+  <input type="file" id="imagem" accept="image/*" style="margin-bottom:10px;">
+  
   <button onclick="cadastrarProduto()" style="padding:10px;width:100%;background:green;color:white;border:none;border-radius:5px;">
     Cadastrar Produto
   </button>
@@ -36,25 +37,32 @@
     function cadastrarProduto() {
       const nome = document.getElementById("nome").value;
       const preco = document.getElementById("preco").value;
+      const arquivo = document.getElementById("imagem").files[0];
 
-      if (!nome || !preco) {
+      if (!nome || !preco || !arquivo) {
         alert("Preencha todos os campos!");
         return;
       }
 
-      db.collection("produtos").add({
-        nome: nome,
-        preco: parseFloat(preco),
-        criadoEm: new Date()
-      })
-      .then(() => {
-        alert("Produto cadastrado!");
-        document.getElementById("nome").value = "";
-        document.getElementById("preco").value = "";
-      })
-      .catch((error) => {
-        alert("Erro: " + error);
-      });
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const imagemBase64 = e.target.result;
+
+        db.collection("produtos").add({
+          nome: nome,
+          preco: parseFloat(preco),
+          imagem: imagemBase64,
+          criadoEm: new Date()
+        }).then(() => {
+          alert("Produto cadastrado com imagem!");
+          document.getElementById("nome").value = "";
+          document.getElementById("preco").value = "";
+          document.getElementById("imagem").value = "";
+        });
+      };
+
+      reader.readAsDataURL(arquivo);
     }
   </script>
 
