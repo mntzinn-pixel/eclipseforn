@@ -1,161 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Minha Loja</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<title>Loja</title>
 
 <style>
-body { margin:0; font-family:Arial; background:#f4f6f9; }
-header { background:#111; color:white; padding:15px; text-align:center; font-size:20px; }
-.container { padding:20px; max-width:1200px; margin:auto; }
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; }
-.card { background:white; border-radius:10px; overflow:hidden; box-shadow:0 3px 10px rgba(0,0,0,0.08); }
-.card img { width:100%; height:220px; object-fit:cover; }
-.card-body { padding:15px; }
-button { padding:8px 12px; border:none; border-radius:5px; cursor:pointer; margin-top:5px; }
-.btn-dark { background:#111; color:white; }
-.btn-green { background:#25D366; color:white; }
-.btn-red { background:red; color:white; }
-.area { background:white; padding:20px; border-radius:10px; margin-top:25px; box-shadow:0 3px 10px rgba(0,0,0,0.05); }
-.floating {
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  background:#25D366;
-  color:white;
-  padding:15px;
-  border-radius:50%;
-  font-size:20px;
-  text-decoration:none;
+body{
+font-family:Arial;
+background:#f5f5f5;
+padding:30px;
+}
+
+.produto{
+background:white;
+padding:20px;
+margin-bottom:15px;
+}
+
+button{
+padding:8px 12px;
+background:#16a34a;
+color:white;
+border:none;
+cursor:pointer;
 }
 </style>
 </head>
-
 <body>
 
-<header>🛍 Minha Loja</header>
+<h1>Minha Loja</h1>
 
-<div class="container">
-
-<h2>Produtos</h2>
-<div class="grid" id="lista"></div>
-
-<div class="area">
-<h3>🛒 Carrinho</h3>
-<div id="carrinho"></div>
-<h4 id="total">Total: R$ 0</h4>
-<button onclick="finalizarPedido()" class="btn-green">
-Finalizar Pedido
-</button>
-</div>
-
-</div>
-
-<a class="floating" href="https://wa.me/5531993178577" target="_blank">💬</a>
+<div id="lista"></div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDAnBNdufwLlMW4bZHK0mUgncmIezNSMTg",
-  authDomain: "minha-loja-digital1.firebaseapp.com",
-  projectId: "minha-loja-digital1",
-  storageBucket: "minha-loja-digital1.firebasestorage.app",
-  messagingSenderId: "119834670597",
-  appId: "1:119834670597:web:36edb828d7fdded6678e6c"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-let carrinho = [];
 
 function carregarProdutos(){
-  db.collection("produtos").get().then(snapshot=>{
-    const div = document.getElementById("lista");
-    div.innerHTML = "";
+let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
 
-    snapshot.forEach(doc=>{
-      const p = doc.data();
+let lista = document.getElementById("lista");
+lista.innerHTML = "";
 
-      div.innerHTML += `
-        <div class="card">
-          <img src="${p.imagem}">
-          <div class="card-body">
-            <h4>${p.nome}</h4>
-            <p>R$ ${p.preco}</p>
-            <button onclick="addCarrinho('${p.nome}', ${p.preco})" class="btn-dark">
-              Adicionar
-            </button>
-          </div>
-        </div>
-      `;
-    });
-  });
+produtos.forEach((p,index)=>{
+
+lista.innerHTML += `
+<div class="produto">
+<h3>${p.nome}</h3>
+<p>R$ ${p.preco}</p>
+<p>Estoque: ${p.estoque}</p>
+<button onclick="comprar(${index})">Comprar</button>
+</div>
+`;
+
+});
 }
 
-function addCarrinho(nome, preco){
-  carrinho.push({nome, preco});
-  atualizarCarrinho();
+function comprar(index){
+let produtos = JSON.parse(localStorage.getItem("produtos"));
+let vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+
+if(produtos[index].estoque <= 0){
+alert("Sem estoque!");
+return;
 }
 
-function atualizarCarrinho(){
-  let div = document.getElementById("carrinho");
-  div.innerHTML = "";
-  let total = 0;
+produtos[index].estoque -= 1;
 
-  carrinho.forEach((item,i)=>{
-    total += item.preco;
-    div.innerHTML += `
-      <div>
-        ${item.nome} - R$ ${item.preco}
-        <button onclick="remover(${i})" class="btn-red">X</button>
-      </div>
-    `;
-  });
+vendas.push({
+nome: produtos[index].nome,
+valor: produtos[index].preco
+});
 
-  document.getElementById("total").innerText =
-    "Total: R$ " + total.toFixed(2);
-}
+localStorage.setItem("produtos", JSON.stringify(produtos));
+localStorage.setItem("vendas", JSON.stringify(vendas));
 
-function remover(i){
-  carrinho.splice(i,1);
-  atualizarCarrinho();
-}
-
-function finalizarPedido(){
-
-  if(carrinho.length == 0){
-    alert("Carrinho vazio!");
-    return;
-  }
-
-  let total = 0;
-  carrinho.forEach(item=> total += item.preco);
-
-  db.collection("pedidos").add({
-    itens: carrinho,
-    total: total,
-    data: new Date(),
-    status: "Novo"
-  });
-
-  let mensagem = "Olá, novo pedido:%0A%0A";
-  carrinho.forEach(item=>{
-    mensagem += "- " + item.nome + " - R$ " + item.preco + "%0A";
-  });
-  mensagem += "%0ATotal: R$ " + total.toFixed(2);
-
-  window.open("https://wa.me/5531993178577?text=" + mensagem);
-
-  carrinho = [];
-  atualizarCarrinho();
-  alert("Pedido enviado!");
+alert("Compra realizada!");
+carregarProdutos();
 }
 
 carregarProdutos();
+
 </script>
 
 </body>
