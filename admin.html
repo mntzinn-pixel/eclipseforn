@@ -6,40 +6,124 @@
 <title>Painel Admin</title>
 
 <style>
-body { font-family:Arial; background:#0f172a; color:white; padding:20px; }
-input { padding:10px; margin:5px 0; width:100%; }
-button { padding:10px; background:#22c55e; border:none; color:white; cursor:pointer; }
+body {
+    background: #0f172a;
+    font-family: Arial, sans-serif;
+    color: white;
+    padding: 20px;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: none;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.add-btn {
+    background: #22c55e;
+    color: white;
+}
+
+.delete-btn {
+    background: #ef4444;
+    color: white;
+    margin-top: 10px;
+}
+
+.card {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+img {
+    width: 100%;
+    border-radius: 6px;
+    margin-top: 10px;
+}
 </style>
 </head>
 <body>
 
-<h2>Painel de Produtos</h2>
+<h1>Painel de Produtos</h1>
 
 <input type="text" id="nome" placeholder="Nome do produto">
-<input type="number" id="preco" placeholder="Preço">
+<input type="text" id="preco" placeholder="Preço">
+<textarea id="descricao" placeholder="Descrição"></textarea>
+<input type="text" id="imagem" placeholder="URL da imagem">
 
-<button onclick="adicionar()">Adicionar Produto</button>
+<button class="add-btn" onclick="adicionarProduto()">Adicionar Produto</button>
+
+<div id="listaProdutos"></div>
 
 <script>
-function adicionar(){
-    let nome = document.getElementById("nome").value;
-    let preco = document.getElementById("preco").value;
 
-    if(!nome || !preco){
-        alert("Preencha tudo");
+function carregarProdutos() {
+    const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+    const lista = document.getElementById("listaProdutos");
+    lista.innerHTML = "";
+
+    produtos.forEach((produto, index) => {
+        lista.innerHTML += `
+            <div class="card">
+                <h3>${produto.nome}</h3>
+                <p><strong>R$ ${produto.preco}</strong></p>
+                <p>${produto.descricao}</p>
+                <img src="${produto.imagem}">
+                <button class="delete-btn" onclick="excluirProduto(${index})">Excluir</button>
+            </div>
+        `;
+    });
+}
+
+function adicionarProduto() {
+    const nome = document.getElementById("nome").value;
+    const preco = document.getElementById("preco").value;
+    const descricao = document.getElementById("descricao").value;
+    const imagem = document.getElementById("imagem").value;
+
+    if (!nome || !preco) {
+        alert("Preencha nome e preço!");
         return;
     }
 
-    let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+    const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
 
-    produtos.push({ nome, preco });
+    produtos.push({ nome, preco, descricao, imagem });
 
     localStorage.setItem("produtos", JSON.stringify(produtos));
 
-    alert("Produto adicionado!");
     document.getElementById("nome").value = "";
     document.getElementById("preco").value = "";
+    document.getElementById("descricao").value = "";
+    document.getElementById("imagem").value = "";
+
+    carregarProdutos();
 }
+
+function excluirProduto(index) {
+    const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+    produtos.splice(index, 1);
+    localStorage.setItem("produtos", JSON.stringify(produtos));
+    carregarProdutos();
+}
+
+carregarProdutos();
+
 </script>
 
 </body>
