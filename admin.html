@@ -16,15 +16,21 @@
   <h3>Adicionar Produto</h3>
 
   <input type="text" id="nome" placeholder="Nome do produto" style="padding:10px;width:100%;margin-bottom:10px;">
+  
   <input type="number" id="preco" placeholder="Preço" style="padding:10px;width:100%;margin-bottom:10px;">
+
+  <select id="categoria" style="padding:10px;width:100%;margin-bottom:10px;">
+    <option value="">Selecione categoria</option>
+    <option value="Roupas">Roupas</option>
+    <option value="Calçados">Calçados</option>
+    <option value="Acessórios">Acessórios</option>
+  </select>
+
   <input type="file" id="imagem" accept="image/*" style="margin-bottom:10px;">
   
   <button onclick="cadastrarProduto()" style="padding:10px;width:100%;background:green;color:white;border:none;border-radius:5px;margin-bottom:30px;">
     Cadastrar Produto
   </button>
-
-  <h3>Produtos Cadastrados</h3>
-  <div id="lista-admin"></div>
 
   <script>
     const firebaseConfig = {
@@ -42,9 +48,10 @@
     function cadastrarProduto() {
       const nome = document.getElementById("nome").value;
       const preco = document.getElementById("preco").value;
+      const categoria = document.getElementById("categoria").value;
       const arquivo = document.getElementById("imagem").files[0];
 
-      if (!nome || !preco || !arquivo) {
+      if (!nome || !preco || !categoria || !arquivo) {
         alert("Preencha todos os campos!");
         return;
       }
@@ -57,51 +64,20 @@
         db.collection("produtos").add({
           nome: nome,
           preco: parseFloat(preco),
+          categoria: categoria,
           imagem: imagemBase64,
           criadoEm: new Date()
         }).then(() => {
           alert("Produto cadastrado!");
           document.getElementById("nome").value = "";
           document.getElementById("preco").value = "";
+          document.getElementById("categoria").value = "";
           document.getElementById("imagem").value = "";
-          carregarAdmin();
         });
       };
 
       reader.readAsDataURL(arquivo);
     }
-
-    function excluirProduto(id) {
-      db.collection("produtos").doc(id).delete().then(() => {
-        alert("Produto excluído!");
-        carregarAdmin();
-      });
-    }
-
-    function carregarAdmin() {
-      const lista = document.getElementById("lista-admin");
-      lista.innerHTML = "";
-
-      db.collection("produtos").get().then(snapshot => {
-        snapshot.forEach(doc => {
-          const data = doc.data();
-
-          lista.innerHTML += `
-            <div style="background:white;padding:10px;margin:10px 0;border-radius:8px;">
-              <img src="${data.imagem}" style="width:100px;border-radius:5px;">
-              <p><strong>${data.nome}</strong></p>
-              <p>R$ ${data.preco}</p>
-              <button onclick="excluirProduto('${doc.id}')" 
-                style="background:red;color:white;border:none;padding:5px 10px;border-radius:5px;">
-                Excluir
-              </button>
-            </div>
-          `;
-        });
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", carregarAdmin);
   </script>
 
 </body>
