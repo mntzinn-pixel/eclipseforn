@@ -12,78 +12,74 @@
 
 <style>
 body{margin:0;font-family:Arial;background:#0f172a;color:white;font-size:14px}
-.topbar{background:#111827;padding:12px;display:flex;justify-content:space-between;align-items:center;font-size:16px}
-.menuBtn{font-size:20px;cursor:pointer}
-.sidebar{position:fixed;top:0;left:-240px;width:220px;height:100%;background:#111827;padding:15px;transition:0.3s;z-index:1000}
-.sidebar button{width:100%;padding:10px;margin-bottom:8px;background:#1f2937;border:none;color:white;border-radius:6px;font-size:14px}
+.topbar{background:#111827;padding:12px;display:flex;justify-content:space-between;align-items:center}
+.sidebar{position:fixed;top:0;left:-240px;width:220px;height:100%;background:#111827;padding:15px;transition:.3s}
 .sidebar.active{left:0}
+.sidebar button{width:100%;padding:10px;margin-bottom:8px;background:#1f2937;border:none;color:white;border-radius:6px}
 .content{padding:12px}
 .card{background:#1f2937;padding:12px;border-radius:8px;margin-bottom:12px}
-input,select{width:100%;padding:8px;margin:5px 0;background:#0f172a;border:1px solid #374151;color:white;border-radius:6px;font-size:14px}
-button.primary{background:#2563eb;border:none;padding:10px;border-radius:6px;color:white;font-size:14px;width:100%}
-table{width:100%;font-size:13px}
-th,td{padding:6px;border-bottom:1px solid #374151}
-img{width:45px;height:45px;object-fit:cover;border-radius:6px}
+input,select{width:100%;padding:8px;margin:5px 0;background:#0f172a;border:1px solid #374151;color:white;border-radius:6px}
+button.primary{background:#2563eb;border:none;padding:10px;border-radius:6px;color:white;width:100%}
+.stat{background:#1f2937;padding:12px;border-radius:8px;margin-bottom:8px}
 .hidden{display:none}
-.login{max-width:300px;margin:100px auto;background:#1f2937;padding:18px;border-radius:8px}
-.stat{background:#1f2937;padding:12px;border-radius:8px;margin-bottom:8px;font-size:15px}
+img{width:45px;height:45px;object-fit:cover;border-radius:6px}
 </style>
 </head>
 <body>
 
-<div id="loginPage" class="login">
-<h2>Login Admin</h2>
+<div id="loginPage" class="card" style="max-width:300px;margin:100px auto">
+<h3>Login</h3>
 <input id="email" placeholder="Email">
 <input id="senha" type="password" placeholder="Senha">
-<button type="button" class="primary" id="btnLogin">Entrar</button>
+<button id="btnLogin" class="primary">Entrar</button>
 </div>
 
 <div id="app" class="hidden">
 
 <div class="topbar">
-<span class="menuBtn" id="menuBtn">☰</span>
-<span>Painel Admin</span>
+<button id="menuBtn">☰</button>
+<span>Painel</span>
 </div>
 
 <div id="sidebar" class="sidebar">
-<button id="btnDash">📊 Dashboard</button>
-<button id="btnProd">📦 Produtos</button>
-<button id="btnCat">🏷 Categorias</button>
-<button id="btnPed">🛒 Pedidos</button>
-<button id="btnLogout">🚪 Sair</button>
+<button data-page="dashboard">Dashboard</button>
+<button data-page="produtos">Produtos</button>
+<button data-page="categorias">Categorias</button>
+<button data-page="pedidos">Pedidos</button>
+<button id="logout">Sair</button>
 </div>
 
 <div class="content">
 
-<div id="dashboard" class="section">
+<div id="dashboard" class="page">
 <div class="stat">Produtos: <span id="totalProdutos">0</span></div>
 <div class="stat">Categorias: <span id="totalCategorias">0</span></div>
 <div class="stat">Pedidos: <span id="totalPedidos">0</span></div>
 <div class="stat">Total Vendido: R$ <span id="totalVendido">0</span></div>
 </div>
 
-<div id="produtos" class="section hidden">
+<div id="produtos" class="page hidden">
 <div class="card">
 <input id="pNome" placeholder="Nome">
 <input id="pPreco" type="number" placeholder="Preço">
 <input id="pEstoque" type="number" placeholder="Estoque">
 <select id="pCategoria"></select>
 <input type="file" id="pImagem">
-<button type="button" class="primary" id="btnSalvarProduto">Salvar Produto</button>
+<button id="salvarProduto" class="primary">Salvar Produto</button>
 </div>
-<table><tbody id="listaProdutos"></tbody></table>
+<div id="listaProdutos"></div>
 </div>
 
-<div id="categorias" class="section hidden">
+<div id="categorias" class="page hidden">
 <div class="card">
 <input id="cNome" placeholder="Nome da categoria">
-<button type="button" class="primary" id="btnSalvarCategoria">Salvar Categoria</button>
+<button id="salvarCategoria" class="primary">Salvar Categoria</button>
 </div>
-<ul id="listaCategorias"></ul>
+<div id="listaCategorias"></div>
 </div>
 
-<div id="pedidos" class="section hidden">
-<table><tbody id="listaPedidos"></tbody></table>
+<div id="pedidos" class="page hidden">
+<div id="listaPedidos"></div>
 </div>
 
 </div>
@@ -98,31 +94,26 @@ storageBucket:"minha-loja-digital1.appspot.com"
 };
 
 firebase.initializeApp(firebaseConfig);
-
 const auth=firebase.auth();
 const db=firebase.firestore();
 const storage=firebase.storage();
 
 let editId=null;
 
-document.addEventListener("DOMContentLoaded",()=>{
-
 const loginPage=document.getElementById("loginPage");
 const app=document.getElementById("app");
 
-const pNome=document.getElementById("pNome");
-const pPreco=document.getElementById("pPreco");
-const pEstoque=document.getElementById("pEstoque");
-const pCategoria=document.getElementById("pCategoria");
-const pImagem=document.getElementById("pImagem");
-const cNome=document.getElementById("cNome");
+auth.onAuthStateChanged(user=>{
+if(user){
+loginPage.classList.add("hidden");
+app.classList.remove("hidden");
+carregarDashboard();
+}else{
+loginPage.classList.remove("hidden");
+app.classList.add("hidden");
+}
+});
 
-document.getElementById("menuBtn").onclick=()=>sidebar.classList.toggle("active");
-document.getElementById("btnDash").onclick=()=>mostrar("dashboard");
-document.getElementById("btnProd").onclick=()=>mostrar("produtos");
-document.getElementById("btnCat").onclick=()=>mostrar("categorias");
-document.getElementById("btnPed").onclick=()=>mostrar("pedidos");
-document.getElementById("btnLogout").onclick=()=>auth.signOut();
 document.getElementById("btnLogin").onclick=()=>{
 auth.signInWithEmailAndPassword(
 document.getElementById("email").value,
@@ -130,90 +121,109 @@ document.getElementById("senha").value
 ).catch(e=>alert(e.message));
 };
 
-function mostrar(sec){
-document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));
-document.getElementById(sec).classList.remove("hidden");
-sidebar.classList.remove("active");
-}
+document.getElementById("logout").onclick=()=>auth.signOut();
 
-auth.onAuthStateChanged(user=>{
-if(user){
-loginPage.classList.add("hidden");
-app.classList.remove("hidden");
-}
+document.getElementById("menuBtn").onclick=()=>{
+document.getElementById("sidebar").classList.toggle("active");
+};
+
+document.querySelectorAll("[data-page]").forEach(btn=>{
+btn.onclick=()=>{
+document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
+document.getElementById(btn.dataset.page).classList.remove("hidden");
+document.getElementById("sidebar").classList.remove("active");
+};
 });
 
-document.getElementById("btnSalvarCategoria").onclick=()=>{
-if(!cNome.value)return;
-db.collection("categorias").add({nome:cNome.value});
-cNome.value="";
+function carregarDashboard(){
+db.collection("produtos").onSnapshot(s=>{
+document.getElementById("totalProdutos").innerText=s.size;
+});
+db.collection("categorias").onSnapshot(s=>{
+document.getElementById("totalCategorias").innerText=s.size;
+});
+db.collection("vendas").onSnapshot(s=>{
+document.getElementById("totalPedidos").innerText=s.size;
+let total=0;
+s.forEach(doc=>total+=doc.data().total||0);
+document.getElementById("totalVendido").innerText=total.toFixed(2);
+});
+}
+
+/* CATEGORIAS */
+document.getElementById("salvarCategoria").onclick=()=>{
+let nome=document.getElementById("cNome").value;
+if(!nome)return;
+db.collection("categorias").add({nome});
+document.getElementById("cNome").value="";
 };
 
 db.collection("categorias").onSnapshot(s=>{
-pCategoria.innerHTML="<option value=''>Selecione categoria</option>";
-document.getElementById("listaCategorias").innerHTML="";
+let lista="";
+let select="<option value=''>Selecione categoria</option>";
 s.forEach(doc=>{
-let c=doc.data();
-pCategoria.innerHTML+=`<option value="${c.nome}">${c.nome}</option>`;
-listaCategorias.innerHTML+=`<li>${c.nome}</li>`;
+lista+=`<div>${doc.data().nome}</div>`;
+select+=`<option value="${doc.data().nome}">${doc.data().nome}</option>`;
 });
+document.getElementById("listaCategorias").innerHTML=lista;
+document.getElementById("pCategoria").innerHTML=select;
 });
 
-document.getElementById("btnSalvarProduto").onclick=async ()=>{
-if(!pNome.value||!pPreco.value||!pCategoria.value){
-alert("Preencha tudo");
-return;
-}
+/* PRODUTOS */
+document.getElementById("salvarProduto").onclick=async()=>{
+let nome=document.getElementById("pNome").value;
+let preco=document.getElementById("pPreco").value;
+let estoque=document.getElementById("pEstoque").value;
+let categoria=document.getElementById("pCategoria").value;
+let imagemInput=document.getElementById("pImagem");
 
-let url="";
-if(pImagem.files.length>0){
-let file=pImagem.files[0];
-let ref=storage.ref().child("produtos/"+Date.now()+"_"+file.name);
+if(!nome||!preco||!categoria){alert("Preencha tudo");return;}
+
+let imagemURL="";
+
+if(imagemInput.files.length>0){
+let file=imagemInput.files[0];
+let ref=storage.ref("produtos/"+Date.now()+"_"+file.name);
 await ref.put(file);
-url=await ref.getDownloadURL();
+imagemURL=await ref.getDownloadURL();
 }
 
 let dados={
-nome:pNome.value,
-preco:parseFloat(pPreco.value),
-estoque:parseInt(pEstoque.value)||0,
-categoria:pCategoria.value
+nome,
+preco:parseFloat(preco),
+estoque:parseInt(estoque)||0,
+categoria
 };
-if(url)dados.imagem=url;
+
+if(imagemURL)dados.imagem=imagemURL;
 
 if(editId){
 await db.collection("produtos").doc(editId).update(dados);
 editId=null;
-alert("Atualizado!");
 }else{
 await db.collection("produtos").add(dados);
-alert("Salvo!");
 }
 
-pNome.value="";
-pPreco.value="";
-pEstoque.value="";
-pImagem.value="";
-pCategoria.value="";
+document.getElementById("pNome").value="";
+document.getElementById("pPreco").value="";
+document.getElementById("pEstoque").value="";
+document.getElementById("pImagem").value="";
 };
 
 db.collection("produtos").onSnapshot(s=>{
-listaProdutos.innerHTML="";
+let html="";
 s.forEach(doc=>{
 let p=doc.data();
-listaProdutos.innerHTML+=`
-<tr>
-<td>${p.imagem?`<img src="${p.imagem}">`:""}</td>
-<td>${p.nome}<br>R$ ${p.preco}<br>${p.categoria}</td>
-<td>
-<button onclick="editId='${doc.id}';document.getElementById('pNome').value='${p.nome}';document.getElementById('pPreco').value='${p.preco}';document.getElementById('pEstoque').value='${p.estoque||0}';document.getElementById('pCategoria').value='${p.categoria}';mostrar('produtos')" style="background:#16a34a;border:none;padding:5px;color:white;border-radius:6px">Editar</button>
-<button onclick="db.collection('produtos').doc('${doc.id}').delete()" style="background:#dc2626;border:none;padding:5px;color:white;border-radius:6px">Excluir</button>
-</td>
-</tr>
-`;
+html+=`
+<div class="card">
+${p.imagem?`<img src="${p.imagem}">`:""}
+<div>${p.nome}</div>
+<div>R$ ${p.preco}</div>
+<button onclick="editId='${doc.id}';document.getElementById('pNome').value='${p.nome}';document.getElementById('pPreco').value='${p.preco}';document.getElementById('pEstoque').value='${p.estoque||0}';document.getElementById('pCategoria').value='${p.categoria}'">Editar</button>
+<button onclick="db.collection('produtos').doc('${doc.id}').delete()">Excluir</button>
+</div>`;
 });
-});
-
+document.getElementById("listaProdutos").innerHTML=html;
 });
 </script>
 
