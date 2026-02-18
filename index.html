@@ -8,42 +8,74 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 
 body{
   font-family:'Poppins',sans-serif;
-  background:linear-gradient(135deg,#0b1120,#0f172a);
+  background:#050816;
   color:white;
+  overflow-x:hidden;
+}
+
+/* FUNDO ANIMADO */
+body::before{
+  content:"";
+  position:fixed;
+  width:200%;
+  height:200%;
+  background:radial-gradient(circle at center,#0f172a 0%,#050816 70%);
+  animation:bgMove 20s linear infinite;
+  z-index:-2;
+}
+
+@keyframes bgMove{
+  0%{transform:rotate(0deg);}
+  100%{transform:rotate(360deg);}
 }
 
 /* HEADER */
 .header{
-  background:rgba(15,23,42,0.9);
+  background:rgba(10,15,30,0.85);
   backdrop-filter:blur(10px);
-  padding:12px 15px;
+  padding:14px 18px;
   display:flex;
-  justify-content:space-between;
+  justify-content:center;
   align-items:center;
+  border-bottom:1px solid rgba(0,255,255,0.2);
 }
 
+/* LOGO ECLIPSE */
 .logo{
+  font-family:'Orbitron',sans-serif;
+  font-size:20px;
   font-weight:700;
-  font-size:17px;
+  background:linear-gradient(90deg,#00ffff,#7c3aed,#00ffff);
+  background-size:200% 200%;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:logoGlow 4s linear infinite;
+  letter-spacing:2px;
+}
+
+@keyframes logoGlow{
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
 }
 
 /* SEARCH */
 .search-box{
-  padding:10px 15px;
+  padding:12px 15px;
 }
 
 .search-box input{
   width:100%;
-  padding:9px 12px;
+  padding:10px 14px;
   border-radius:20px;
-  border:none;
+  border:1px solid rgba(0,255,255,0.3);
   background:rgba(255,255,255,0.05);
   color:white;
   font-size:13px;
@@ -60,8 +92,8 @@ body{
 
 .categorias button{
   padding:6px 12px;
-  border:none;
   border-radius:18px;
+  border:1px solid rgba(0,255,255,0.3);
   background:rgba(255,255,255,0.05);
   color:white;
   font-size:12px;
@@ -70,7 +102,8 @@ body{
 }
 
 .categorias button.active{
-  background:linear-gradient(45deg,#2563eb,#00c3ff);
+  background:linear-gradient(45deg,#00ffff,#7c3aed);
+  border:none;
 }
 
 /* GRID */
@@ -91,17 +124,16 @@ body{
   transition:0.3s;
 }
 
-/* BORDA RGB ANIMADA */
+/* BORDA RGB NEON */
 .card::before{
   content:"";
   position:absolute;
   inset:0;
   border-radius:14px;
   padding:2px;
-  background:linear-gradient(45deg,
-    #00ffcc,#00ffff,#2563eb,#7c3aed,#00ffcc);
+  background:linear-gradient(45deg,#00ffff,#7c3aed,#00ffcc,#00ffff);
   background-size:300% 300%;
-  animation:rgbMove 4s linear infinite;
+  animation:rgbMove 3s linear infinite;
   -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
   -webkit-mask-composite:xor;
   mask-composite:exclude;
@@ -115,6 +147,7 @@ body{
 
 .card:hover{
   transform:translateY(-4px);
+  box-shadow:0 0 20px rgba(0,255,255,0.4);
 }
 
 /* IMAGEM */
@@ -131,16 +164,11 @@ body{
 
 .badge{
   font-size:9px;
-  background:rgba(34,197,94,0.2);
+  background:rgba(0,255,150,0.2);
   padding:3px 6px;
   border-radius:12px;
   display:inline-block;
   margin-bottom:4px;
-  font-weight:600;
-}
-
-.card-content div{
-  font-size:13px;
 }
 
 .preco-antigo{
@@ -153,6 +181,7 @@ body{
   font-weight:700;
   font-size:14px;
   margin:3px 0;
+  color:#00ffff;
 }
 
 .pix{
@@ -161,12 +190,13 @@ body{
   margin-bottom:5px;
 }
 
+/* BOTÃO */
 .card button{
   width:100%;
   padding:7px;
   border:none;
   border-radius:18px;
-  background:linear-gradient(45deg,#2563eb,#00c3ff);
+  background:linear-gradient(45deg,#00ffff,#7c3aed);
   color:white;
   font-size:12px;
   font-weight:600;
@@ -175,8 +205,8 @@ body{
 }
 
 .card button:hover{
-  transform:scale(1.04);
-  box-shadow:0 0 12px rgba(0,195,255,0.6);
+  transform:scale(1.05);
+  box-shadow:0 0 15px rgba(0,255,255,0.7);
 }
 
 @media(max-width:360px){
@@ -217,12 +247,9 @@ let categoriaSelecionada="";
 db.collection("categorias").onSnapshot(snapshot=>{
   const container=document.getElementById("listaCategorias");
   container.innerHTML=`<button class="active" onclick="filtrarCategoria('')">Todas</button>`;
-
   snapshot.forEach(doc=>{
     let c=doc.data();
-    container.innerHTML+=`
-      <button onclick="filtrarCategoria('${c.nome}')">${c.nome}</button>
-    `;
+    container.innerHTML+=`<button onclick="filtrarCategoria('${c.nome}')">${c.nome}</button>`;
   });
 });
 
@@ -236,42 +263,34 @@ db.collection("produtos").onSnapshot(snapshot=>{
 
 function filtrarCategoria(cat){
   categoriaSelecionada=cat;
-
   document.querySelectorAll(".categorias button").forEach(btn=>{
     btn.classList.remove("active");
     if(btn.innerText===cat || (cat==="" && btn.innerText==="Todas")){
       btn.classList.add("active");
     }
   });
-
   aplicarFiltros();
 }
 
 function aplicarFiltros(){
   let lista=produtos;
-
   if(categoriaSelecionada){
     lista=lista.filter(p=>p.categoria===categoriaSelecionada);
   }
-
   let texto=document.getElementById("search").value.toLowerCase();
   if(texto){
     lista=lista.filter(p=>p.nome.toLowerCase().includes(texto));
   }
-
   renderProdutos(lista);
 }
 
 function renderProdutos(lista){
   const container=document.getElementById("listaProdutos");
   container.innerHTML="";
-
   lista.forEach(p=>{
     if(!p.categoria) return;
-
     let precoAntigo=(p.preco*1.3).toFixed(2);
     let desconto=Math.floor(100-(p.preco/precoAntigo*100));
-
     container.innerHTML+=`
       <div class="card">
         <img src="${p.imagem || 'https://via.placeholder.com/300'}">
@@ -281,9 +300,7 @@ function renderProdutos(lista){
           <div class="preco-antigo">R$ ${precoAntigo}</div>
           <div class="preco">R$ ${p.preco}</div>
           <div class="pix">⚡ À vista no PIX</div>
-          <button onclick="comprar('${p.id}','${p.nome}',${p.preco})">
-            Comprar
-          </button>
+          <button onclick="comprar('${p.id}','${p.nome}',${p.preco})">Comprar</button>
         </div>
       </div>
     `;
@@ -296,7 +313,6 @@ function comprar(id,nome,preco){
   let mensagem=`Olá! Quero comprar: ${nome} - R$ ${preco}`;
   let url=`https://wa.me/${numeroWhats}?text=${encodeURIComponent(mensagem)}`;
   window.open(url,"_blank");
-
   db.collection("pedidos").add({
     produto:nome,
     total:preco,
