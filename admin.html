@@ -3,33 +3,196 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel Admin</title>
+<title>Eclipse Admin</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:white;font-size:14px}
-.topbar{background:#111827;padding:12px;display:flex;justify-content:space-between}
-.sidebar{position:fixed;top:0;left:-240px;width:220px;height:100%;background:#111827;padding:15px;transition:.3s}
-.sidebar.active{left:0}
-.sidebar button{width:100%;padding:10px;margin-bottom:8px;background:#1f2937;border:none;color:white;border-radius:6px}
-.content{padding:12px}
-.card{background:#1f2937;padding:12px;border-radius:8px;margin-bottom:12px}
-input,select{width:100%;padding:8px;margin:5px 0;background:#0f172a;border:1px solid #374151;color:white;border-radius:6px}
-button.primary{background:#2563eb;border:none;padding:10px;border-radius:6px;color:white;width:100%}
-.stat{background:#1f2937;padding:12px;border-radius:8px;margin-bottom:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+font-family:'Poppins',sans-serif;
+background:#050816;
+color:white;
+font-size:14px;
+}
+
+/* LOGIN */
+#loginPage{
+max-width:320px;
+margin:120px auto;
+background:#0f172a;
+padding:20px;
+border-radius:16px;
+position:relative;
+}
+
+#loginPage::before{
+content:"";
+position:absolute;
+inset:0;
+padding:2px;
+border-radius:16px;
+background:linear-gradient(45deg,red,orange,yellow,green,cyan,blue,violet,red);
+background-size:400% 400%;
+animation:rgb 8s linear infinite;
+-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+-webkit-mask-composite:xor;
+mask-composite:exclude;
+}
+
+input,select{
+width:100%;
+padding:10px;
+margin:6px 0;
+background:#0b1220;
+border:1px solid #1e293b;
+color:white;
+border-radius:8px;
+}
+
+button{
+cursor:pointer;
+}
+
+.primary{
+background:linear-gradient(45deg,#00ffff,#7c3aed);
+border:none;
+padding:10px;
+border-radius:8px;
+color:white;
+width:100%;
+font-weight:600;
+}
+
+/* APP */
 .hidden{display:none}
-.small-btn{background:#374151;border:none;color:white;padding:5px 8px;border-radius:4px;margin-right:5px}
+
+.topbar{
+background:#0f172a;
+padding:14px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid rgba(0,255,255,0.2);
+}
+
+.topbar span{
+font-family:'Orbitron',sans-serif;
+background:linear-gradient(90deg,#00ffff,#7c3aed);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+.sidebar{
+position:fixed;
+top:0;
+left:-240px;
+width:220px;
+height:100%;
+background:#0f172a;
+padding:20px;
+transition:.3s;
+z-index:100;
+border-right:1px solid rgba(0,255,255,0.2);
+}
+
+.sidebar.active{left:0}
+
+.sidebar button{
+width:100%;
+padding:10px;
+margin-bottom:10px;
+background:#111827;
+border:none;
+color:white;
+border-radius:8px;
+}
+
+.content{
+padding:15px;
+margin-top:10px;
+}
+
+/* DASHBOARD */
+.stat{
+background:#0f172a;
+padding:15px;
+border-radius:14px;
+margin-bottom:12px;
+position:relative;
+}
+
+.stat::before{
+content:"";
+position:absolute;
+inset:0;
+padding:2px;
+border-radius:14px;
+background:linear-gradient(45deg,#00ffff,#7c3aed,#00ffff);
+background-size:300% 300%;
+animation:rgb 6s linear infinite;
+-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+-webkit-mask-composite:xor;
+mask-composite:exclude;
+}
+
+/* CARDS */
+.card{
+background:#0f172a;
+padding:15px;
+border-radius:14px;
+margin-bottom:14px;
+position:relative;
+}
+
+.card::before{
+content:"";
+position:absolute;
+inset:0;
+padding:2px;
+border-radius:14px;
+background:linear-gradient(45deg,red,orange,yellow,green,cyan,blue,violet,red);
+background-size:400% 400%;
+animation:rgb 10s linear infinite;
+-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+-webkit-mask-composite:xor;
+mask-composite:exclude;
+}
+
+.small-btn{
+background:#1e293b;
+border:none;
+color:white;
+padding:6px 10px;
+border-radius:6px;
+margin-top:6px;
+margin-right:6px;
+}
+
 .danger{background:#dc2626}
-img{width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:5px}
+
+img{
+width:60px;
+height:60px;
+object-fit:cover;
+border-radius:8px;
+margin-top:6px;
+}
+
+@keyframes rgb{
+0%{background-position:0% 50%}
+100%{background-position:400% 50%}
+}
 </style>
 </head>
 <body>
 
-<div id="loginPage" class="card" style="max-width:300px;margin:100px auto">
-<h3>Login</h3>
+<div id="loginPage">
+<h3 style="text-align:center;margin-bottom:10px">Eclipse Admin</h3>
 <input id="email" placeholder="Email">
 <input id="senha" type="password" placeholder="Senha">
 <button id="btnLogin" class="primary">Entrar</button>
@@ -39,7 +202,7 @@ img{width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:5px}
 
 <div class="topbar">
 <button id="menuBtn">☰</button>
-<span>Painel</span>
+<span>Painel Eclipse</span>
 </div>
 
 <div id="sidebar" class="sidebar">
@@ -52,8 +215,8 @@ img{width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:5px}
 <div class="content">
 
 <div id="dashboard" class="page">
-<div class="stat">Produtos: <span id="totalProdutos">0</span></div>
-<div class="stat">Categorias: <span id="totalCategorias">0</span></div>
+<div class="stat">Produtos cadastrados: <span id="totalProdutos">0</span></div>
+<div class="stat">Categorias cadastradas: <span id="totalCategorias">0</span></div>
 </div>
 
 <div id="produtos" class="page hidden">
@@ -62,7 +225,7 @@ img{width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:5px}
 <input id="pPreco" type="number" placeholder="Preço">
 <input id="pEstoque" type="number" placeholder="Estoque">
 <select id="pCategoria"></select>
-<input type="text" id="pImagemUrl" placeholder="Cole a URL da imagem">
+<input type="text" id="pImagemUrl" placeholder="URL da imagem">
 <button id="salvarProduto" class="primary">Salvar Produto</button>
 </div>
 <div id="listaProdutos"></div>
@@ -93,7 +256,6 @@ const db=firebase.firestore();
 let editProdutoId=null;
 let editCategoriaId=null;
 
-/* LOGIN */
 btnLogin.onclick=()=>{
 auth.signInWithEmailAndPassword(email.value,senha.value)
 .catch(e=>alert(e.message));
@@ -109,8 +271,8 @@ carregarDashboard();
 }
 });
 
-/* MENU */
 menuBtn.onclick=()=>sidebar.classList.toggle("active");
+
 document.querySelectorAll("[data-page]").forEach(btn=>{
 btn.onclick=()=>{
 document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
@@ -119,7 +281,6 @@ sidebar.classList.remove("active");
 };
 });
 
-/* DASHBOARD */
 function carregarDashboard(){
 db.collection("produtos").onSnapshot(s=>{
 totalProdutos.innerText=s.size;
@@ -129,59 +290,52 @@ totalCategorias.innerText=s.size;
 });
 }
 
-/* CATEGORIAS */
 salvarCategoria.onclick=async()=>{
 if(!cNome.value)return;
-
 if(editCategoriaId){
 await db.collection("categorias").doc(editCategoriaId).update({nome:cNome.value});
 editCategoriaId=null;
 }else{
 await db.collection("categorias").add({nome:cNome.value});
 }
-
 cNome.value="";
 };
 
 db.collection("categorias").onSnapshot(s=>{
 let html="";
 let select="<option value=''>Selecione categoria</option>";
-
 s.forEach(doc=>{
 let c=doc.data();
 html+=`
 <div class="card">
-${c.nome}
+${c.nome}<br>
 <button class="small-btn" data-edit="${doc.id}">Editar</button>
 <button class="small-btn danger" data-delete="${doc.id}">Excluir</button>
 </div>`;
 select+=`<option value="${c.nome}">${c.nome}</option>`;
 });
-
 listaCategorias.innerHTML=html;
 pCategoria.innerHTML=select;
-
 document.querySelectorAll("[data-edit]").forEach(btn=>{
 btn.onclick=()=>{
 editCategoriaId=btn.dataset.edit;
 cNome.value=btn.parentElement.firstChild.textContent.trim();
 };
 });
-
 document.querySelectorAll("[data-delete]").forEach(btn=>{
 btn.onclick=()=>{
+if(confirm("Excluir categoria?")){
 db.collection("categorias").doc(btn.dataset.delete).delete();
+}
 };
 });
 });
 
-/* PRODUTOS */
 salvarProduto.onclick=async()=>{
 if(!pNome.value||!pPreco.value||!pCategoria.value){
 alert("Preencha tudo");
 return;
 }
-
 let dados={
 nome:pNome.value,
 preco:parseFloat(pPreco.value),
@@ -189,14 +343,12 @@ estoque:parseInt(pEstoque.value)||0,
 categoria:pCategoria.value,
 imagem:pImagemUrl.value||""
 };
-
 if(editProdutoId){
 await db.collection("produtos").doc(editProdutoId).update(dados);
 editProdutoId=null;
 }else{
 await db.collection("produtos").add(dados);
 }
-
 pNome.value="";
 pPreco.value="";
 pEstoque.value="";
@@ -211,13 +363,13 @@ html+=`
 <div class="card">
 <strong>${p.nome}</strong><br>
 R$ ${p.preco}<br>
+Estoque: ${p.estoque || 0}<br>
 ${p.imagem?`<img src="${p.imagem}">`:""}
 <br>
 <button class="small-btn" data-editp="${doc.id}">Editar</button>
 <button class="small-btn danger" data-deletep="${doc.id}">Excluir</button>
 </div>`;
 });
-
 listaProdutos.innerHTML=html;
 
 document.querySelectorAll("[data-editp]").forEach(btn=>{
@@ -234,7 +386,9 @@ pImagemUrl.value=p.imagem||"";
 
 document.querySelectorAll("[data-deletep]").forEach(btn=>{
 btn.onclick=()=>{
+if(confirm("Excluir produto?")){
 db.collection("produtos").doc(btn.dataset.deletep).delete();
+}
 };
 });
 });
