@@ -17,6 +17,15 @@ body{
   font-family:'Poppins',sans-serif;
   background:#050816;
   color:white;
+  overflow-x:hidden;
+}
+
+/* FUNDO PARTÍCULAS */
+canvas{
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:-1;
 }
 
 /* HEADER */
@@ -44,6 +53,7 @@ body{
   padding:12px;
 }
 
+/* ===== CATEGORIA RGB ===== */
 .categoria-titulo{
   grid-column:1/-1;
   margin:18px 0 8px;
@@ -52,24 +62,58 @@ body{
   font-family:'Orbitron',sans-serif;
   font-size:14px;
   letter-spacing:1.5px;
-  color:#00ffff;
-  border-radius:10px;
-  background:rgba(0,255,255,0.04);
+  color:#fff;
+  position:relative;
+  border-radius:12px;
+  background:#0f172a;
+  z-index:0;
 }
 
-/* CARD */
-.card{
-  background:rgba(255,255,255,0.05);
+.categoria-titulo::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
   border-radius:14px;
+  background:linear-gradient(
+    45deg,
+    red,orange,yellow,green,cyan,blue,violet,red
+  );
+  background-size:400% 400%;
+  animation:rgbBorder 6s linear infinite;
+  z-index:-1;
+}
+
+/* ===== CARD RGB ===== */
+.card{
+  position:relative;
+  background:#0f172a;
+  border-radius:16px;
   overflow:hidden;
-  backdrop-filter:blur(12px);
-  border:1px solid rgba(0,255,255,0.2);
-  transition:0.3s;
+  z-index:0;
+}
+
+.card::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  border-radius:18px;
+  background:linear-gradient(
+    45deg,
+    red,orange,yellow,green,cyan,blue,violet,red
+  );
+  background-size:400% 400%;
+  animation:rgbBorder 8s linear infinite;
+  z-index:-1;
 }
 
 .card:hover{
-  box-shadow:0 0 15px rgba(0,255,255,0.5);
   transform:scale(1.03);
+  box-shadow:0 0 20px cyan;
+}
+
+@keyframes rgbBorder{
+  0%{background-position:0% 50%;}
+  100%{background-position:400% 50%;}
 }
 
 .card img{
@@ -197,6 +241,8 @@ body{
 </head>
 <body>
 
+<canvas id="particles"></canvas>
+
 <div class="header">
   <div class="logo">Eclipseforn</div>
 </div>
@@ -204,8 +250,8 @@ body{
 <div class="grid" id="listaProdutos"></div>
 
 <div class="cart-float" onclick="abrirCarrinho()">
-  🛒
-  <div class="cart-count" id="cartCount">0</div>
+🛒
+<div class="cart-count" id="cartCount">0</div>
 </div>
 
 <div class="cart-modal" id="cartModal">
@@ -271,43 +317,31 @@ function alterarQtd(id,nome,preco,estoque,valor){
   let span = document.getElementById("qtd-"+id);
   let qtd = parseInt(span.innerText);
   qtd += valor;
-
-  if(qtd < 0) qtd = 0;
-  if(qtd > estoque) qtd = estoque;
-
-  span.innerText = qtd;
-
-  if(qtd > 0){
-    carrinho[nome] = {qtd:qtd, preco:preco};
-  } else {
-    delete carrinho[nome];
-  }
-
+  if(qtd<0) qtd=0;
+  if(qtd>estoque) qtd=estoque;
+  span.innerText=qtd;
+  if(qtd>0){ carrinho[nome]={qtd:qtd,preco:preco}; }
+  else{ delete carrinho[nome]; }
   atualizarCarrinho();
 }
 
 function atualizarCarrinho(){
-  let cartCount = document.getElementById("cartCount");
-  let cartItems = document.getElementById("cartItems");
-  let cartTotal = document.getElementById("cartTotal");
-
+  let cartCount=document.getElementById("cartCount");
+  let cartItems=document.getElementById("cartItems");
+  let cartTotal=document.getElementById("cartTotal");
   cartItems.innerHTML="";
   let totalItens=0;
   let total=0;
-
   for(let nome in carrinho){
     let item=carrinho[nome];
     totalItens+=item.qtd;
     total+=item.qtd*item.preco;
-
     cartItems.innerHTML+=`
       <div class="cart-item">
         <span>${nome} x${item.qtd}</span>
         <span>R$ ${item.qtd*item.preco}</span>
-      </div>
-    `;
+      </div>`;
   }
-
   cartCount.innerText=totalItens;
   cartTotal.innerText="Total: R$ "+total;
 }
@@ -323,18 +357,46 @@ function fecharCarrinho(){
 function finalizarPedido(){
   let mensagem="Pedido:%0A";
   let total=0;
-
   for(let nome in carrinho){
     let item=carrinho[nome];
     mensagem+=`${nome} x${item.qtd}%0A`;
     total+=item.qtd*item.preco;
   }
-
   mensagem+=`Total: R$ ${total}`;
-
-  let numero="5599999999999"; // coloque seu número aqui
+  let numero="5599999999999"; 
   window.open(`https://wa.me/${numero}?text=${mensagem}`,"_blank");
 }
+
+/* FUNDO PARTÍCULAS */
+const canvas=document.getElementById("particles");
+const ctx=canvas.getContext("2d");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let particles=[];
+for(let i=0;i<70;i++){
+  particles.push({
+    x:Math.random()*canvas.width,
+    y:Math.random()*canvas.height,
+    r:Math.random()*2,
+    dx:(Math.random()-0.5)*0.6,
+    dy:(Math.random()-0.5)*0.6
+  });
+}
+
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle="cyan";
+    ctx.fill();
+    p.x+=p.dx;
+    p.y+=p.dy;
+  });
+  requestAnimationFrame(animate);
+}
+animate();
 </script>
 
 </body>
