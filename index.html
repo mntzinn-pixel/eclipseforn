@@ -12,12 +12,7 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-
-body{
-  font-family:'Poppins',sans-serif;
-  background:#050816;
-  color:white;
-}
+body{font-family:'Poppins',sans-serif;background:#050816;color:white;}
 
 .header{
   background:rgba(10,15,30,0.9);
@@ -42,6 +37,7 @@ body{
   padding:12px;
 }
 
+/* CATEGORIA RGB */
 .categoria-titulo{
   grid-column:1/-1;
   margin:18px 0 8px;
@@ -49,7 +45,6 @@ body{
   text-align:center;
   font-family:'Orbitron',sans-serif;
   font-size:14px;
-  letter-spacing:1.5px;
   border-radius:12px;
   position:relative;
   background:#0f172a;
@@ -67,11 +62,10 @@ body{
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;
   mask-composite:exclude;
-  pointer-events:none;
 }
 
+/* CARD RGB */
 .card{
-  position:relative;
   border-radius:16px;
   padding:2px;
   background:linear-gradient(45deg,red,orange,yellow,green,cyan,blue,violet,red);
@@ -114,7 +108,7 @@ body{
   color:white;font-weight:bold;cursor:pointer;
 }
 
-.esgotado{margin-top:6px;text-align:center;color:#ff4d4d;font-weight:bold;}
+.esgotado{text-align:center;color:#ff4d4d;font-weight:bold;margin-top:6px;}
 
 .cart-float{
   position:fixed;bottom:20px;right:20px;
@@ -132,6 +126,7 @@ body{
   display:flex;align-items:center;justify-content:center;
 }
 
+/* TOAST */
 .toast{
   position:fixed;bottom:90px;left:50%;
   transform:translateX(-50%);
@@ -141,12 +136,43 @@ body{
   opacity:0;pointer-events:none;
   transition:all 0.4s ease;z-index:9999;
 }
-
 .toast.show{opacity:1;bottom:110px;}
+
+/* MODAL */
+.modal-bg{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.7);
+  display:none;align-items:center;justify-content:center;
+  z-index:99999;
+}
+
+.modal{
+  background:#0f172a;
+  width:90%;max-width:400px;
+  border-radius:16px;
+  padding:20px;
+  box-shadow:0 0 30px rgba(0,255,255,0.4);
+  animation:fadeIn 0.3s ease;
+}
+
+.modal h2{text-align:center;margin-bottom:12px;}
+.modal-item{font-size:14px;margin-bottom:6px;}
+.modal-total{margin-top:10px;font-weight:bold;color:#00ffff;}
+
+.modal button{
+  margin-top:12px;width:100%;padding:8px;border:none;border-radius:8px;
+  background:linear-gradient(45deg,#00ffff,#7c3aed);
+  color:white;font-weight:bold;cursor:pointer;
+}
 
 @keyframes rgbBorder{
   0%{background-position:0% 50%;}
   100%{background-position:400% 50%;}
+}
+
+@keyframes fadeIn{
+  from{opacity:0;transform:scale(0.9);}
+  to{opacity:1;transform:scale(1);}
 }
 </style>
 </head>
@@ -158,36 +184,43 @@ body{
 
 <div class="grid" id="listaProdutos"></div>
 
-<div class="cart-float" onclick="finalizarPedido()">
+<div class="cart-float" onclick="abrirModal()">
 🛒
 <div class="cart-count" id="cartCount">0</div>
 </div>
 
 <div id="toast" class="toast"></div>
 
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2>Seu Pedido</h2>
+    <div id="modalItens"></div>
+    <div class="modal-total" id="modalTotal"></div>
+    <button onclick="confirmarPedido()">Confirmar Pedido</button>
+    <button onclick="fecharModal()" style="background:#333;margin-top:6px;">Cancelar</button>
+  </div>
+</div>
+
 <script>
-var firebaseConfig = {
-  apiKey: "AIzaSyDAnBNdufwLlMW4bZHK0mUgncmIezNSMTg",
-  authDomain: "minha-loja-digital1.firebaseapp.com",
-  projectId: "minha-loja-digital1"
+var firebaseConfig={
+  apiKey:"AIzaSyDAnBNdufwLlMW4bZHK0mUgncmIezNSMTg",
+  authDomain:"minha-loja-digital1.firebaseapp.com",
+  projectId:"minha-loja-digital1"
 };
 
 firebase.initializeApp(firebaseConfig);
-var db = firebase.firestore();
+var db=firebase.firestore();
 
-let carrinho = {};
-let produtosMap = {};
+let carrinho={};
 
-db.collection("produtos").onSnapshot((snapshot)=>{
+db.collection("produtos").onSnapshot(snapshot=>{
   const lista=document.getElementById("listaProdutos");
   lista.innerHTML="";
   let categorias={};
-  produtosMap={};
 
   snapshot.forEach(doc=>{
     let p=doc.data();
     p.id=doc.id;
-    produtosMap[p.nome]=p;
     if(!categorias[p.categoria]) categorias[p.categoria]=[];
     categorias[p.categoria].push(p);
   });
@@ -210,10 +243,7 @@ db.collection("produtos").onSnapshot((snapshot)=>{
                 <button onclick="alterarQtd('${p.id}','${p.nome}',${p.preco},${p.estoque},-1)">-</button>
                 <span id="qtd-${p.id}">0</span>
                 <button onclick="alterarQtd('${p.id}','${p.nome}',${p.preco},${p.estoque},1)">+</button>
-              </div>
-              <button class="btn-comprar" onclick="comprarDireto('${p.id}','${p.nome}',${p.preco})">
-              Finalizar Compra
-              </button>`
+              </div>`
               :
               `<div class="esgotado">ESGOTADO</div>`
             }
@@ -225,24 +255,24 @@ db.collection("produtos").onSnapshot((snapshot)=>{
 });
 
 function mostrarToast(msg){
-  const toast=document.getElementById("toast");
-  toast.innerText=msg;
-  toast.classList.add("show");
-  setTimeout(()=>{toast.classList.remove("show");},2000);
+  const t=document.getElementById("toast");
+  t.innerText=msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2000);
 }
 
 function alterarQtd(id,nome,preco,estoque,valor){
   let span=document.getElementById("qtd-"+id);
   let qtd=parseInt(span.innerText);
   qtd+=valor;
-  if(qtd<0) qtd=0;
-  if(qtd>estoque) qtd=estoque;
+  if(qtd<0)qtd=0;
+  if(qtd>estoque)qtd=estoque;
   span.innerText=qtd;
 
   if(qtd>0){
     carrinho[nome]={qtd,preco,id};
-    if(valor>0) mostrarToast("✅ Produto adicionado ao carrinho");
-  } else {
+    if(valor>0)mostrarToast("✅ Produto adicionado ao carrinho");
+  }else{
     delete carrinho[nome];
   }
 
@@ -250,16 +280,31 @@ function alterarQtd(id,nome,preco,estoque,valor){
     Object.values(carrinho).reduce((a,b)=>a+b.qtd,0);
 }
 
-function comprarDireto(id,nome,preco){
-  db.collection("produtos").doc(id).update({
-    estoque: firebase.firestore.FieldValue.increment(-1)
-  });
+function abrirModal(){
+  if(Object.keys(carrinho).length===0){
+    mostrarToast("Carrinho vazio");
+    return;
+  }
 
-  let mensagem=`Pedido:%0A${nome}%0AValor: R$ ${preco.toFixed(2)}`;
-  window.open(`https://wa.me/5531993178577?text=${mensagem}`,"_blank");
+  let itens=document.getElementById("modalItens");
+  let total=0;
+  itens.innerHTML="";
+
+  for(let nome in carrinho){
+    let item=carrinho[nome];
+    itens.innerHTML+=`<div class="modal-item">${nome} x${item.qtd}</div>`;
+    total+=item.qtd*item.preco;
+  }
+
+  document.getElementById("modalTotal").innerText="Total: R$ "+total.toFixed(2);
+  document.getElementById("modalBg").style.display="flex";
 }
 
-function finalizarPedido(){
+function fecharModal(){
+  document.getElementById("modalBg").style.display="none";
+}
+
+function confirmarPedido(){
   let mensagem="Pedido:%0A";
   let total=0;
 
@@ -278,6 +323,7 @@ function finalizarPedido(){
 
   carrinho={};
   document.getElementById("cartCount").innerText=0;
+  fecharModal();
 }
 </script>
 
