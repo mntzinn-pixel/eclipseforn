@@ -44,7 +44,7 @@ body{
   padding:12px;
 }
 
-/* ===== CATEGORIA COM BORDA RGB ===== */
+/* ===== CATEGORIA RGB ===== */
 .categoria-titulo{
   grid-column:1/-1;
   margin:18px 0 8px;
@@ -65,16 +65,13 @@ body{
   position:absolute;
   inset:-2px;
   border-radius:14px;
-  background:linear-gradient(
-    45deg,
-    red,orange,yellow,green,cyan,blue,violet,red
-  );
+  background:linear-gradient(45deg,red,orange,yellow,green,cyan,blue,violet,red);
   background-size:400% 400%;
   animation:rgbBorder 6s linear infinite;
   z-index:-1;
 }
 
-/* CARD COM BORDA RGB */
+/* CARD RGB */
 .card{
   position:relative;
   background:#0f172a;
@@ -88,10 +85,7 @@ body{
   position:absolute;
   inset:-2px;
   border-radius:18px;
-  background:linear-gradient(
-    45deg,
-    red,orange,yellow,green,cyan,blue,violet,red
-  );
+  background:linear-gradient(45deg,red,orange,yellow,green,cyan,blue,violet,red);
   background-size:400% 400%;
   animation:rgbBorder 8s linear infinite;
   z-index:-1;
@@ -110,21 +104,30 @@ body{
   font-weight:700;
 }
 
-.card button{
-  width:100%;
+.quantidade-box{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:6px;
   margin-top:6px;
-  padding:6px;
-  border:none;
-  border-radius:16px;
-  background:linear-gradient(45deg,#00ffff,#7c3aed);
-  color:white;
-  font-size:12px;
-  cursor:pointer;
-  transition:0.3s;
 }
 
-.card button:hover{
-  box-shadow:0 0 10px #00ffff;
+.quantidade-box button{
+  width:26px;
+  height:26px;
+  border:none;
+  border-radius:8px;
+  background:linear-gradient(45deg,#00ffff,#7c3aed);
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.esgotado{
+  margin-top:6px;
+  text-align:center;
+  color:#ff4d4d;
+  font-weight:bold;
 }
 
 /* CARRINHO */
@@ -142,7 +145,6 @@ body{
   font-size:24px;
   cursor:pointer;
   box-shadow:0 0 20px rgba(0,255,255,0.6);
-  z-index:999;
 }
 
 .cart-count{
@@ -166,7 +168,6 @@ body{
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:1000;
 }
 
 .cart-content{
@@ -182,7 +183,6 @@ body{
   display:flex;
   justify-content:space-between;
   margin-bottom:8px;
-  font-size:13px;
 }
 
 .total{
@@ -213,8 +213,8 @@ body{
 <div class="grid" id="listaProdutos"></div>
 
 <div class="cart-float" onclick="abrirCarrinho()">
-  🛒
-  <div class="cart-count" id="cartCount">0</div>
+🛒
+<div class="cart-count" id="cartCount">0</div>
 </div>
 
 <div class="cart-modal" id="cartModal">
@@ -227,8 +227,102 @@ body{
 </div>
 
 <script>
-/* SEU SCRIPT ORIGINAL CONTINUA IGUAL AQUI */
-/* Não alterei nenhuma função */
+var firebaseConfig = {
+  apiKey: "AIzaSyDAnBNdufwLlMW4bZHK0mUgncmIezNSMTg",
+  authDomain: "minha-loja-digital1.firebaseapp.com",
+  projectId: "minha-loja-digital1"
+};
+
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+
+let carrinho = {};
+
+db.collection("produtos").onSnapshot((snapshot)=>{
+  const lista=document.getElementById("listaProdutos");
+  lista.innerHTML="";
+  let categorias={};
+
+  snapshot.forEach(doc=>{
+    let p=doc.data();
+    p.id=doc.id;
+    if(!categorias[p.categoria]) categorias[p.categoria]=[];
+    categorias[p.categoria].push(p);
+  });
+
+  for(let cat in categorias){
+    lista.innerHTML+=`<div class="categoria-titulo">${cat}</div>`;
+    categorias[cat].forEach(p=>{
+      lista.innerHTML+=`
+      <div class="card">
+        <img src="${p.imagem}">
+        <div class="card-content">
+          <div>${p.nome}</div>
+          <div class="preco">R$ ${p.preco}</div>
+          ${
+            p.estoque>0?
+            `<div class="quantidade-box">
+              <button onclick="alterarQtd('${p.id}','${p.nome}',${p.preco},${p.estoque},-1)">-</button>
+              <span id="qtd-${p.id}">0</span>
+              <button onclick="alterarQtd('${p.id}','${p.nome}',${p.preco},${p.estoque},1)">+</button>
+            </div>`
+            :
+            `<div class="esgotado">ESGOTADO</div>`
+          }
+        </div>
+      </div>`;
+    });
+  }
+});
+
+function alterarQtd(id,nome,preco,estoque,valor){
+  let span=document.getElementById("qtd-"+id);
+  let qtd=parseInt(span.innerText);
+  qtd+=valor;
+  if(qtd<0) qtd=0;
+  if(qtd>estoque) qtd=estoque;
+  span.innerText=qtd;
+  if(qtd>0){carrinho[nome]={qtd,preco};}
+  else{delete carrinho[nome];}
+  atualizarCarrinho();
+}
+
+function atualizarCarrinho(){
+  let total=0, itens=0;
+  let html="";
+  for(let nome in carrinho){
+    let item=carrinho[nome];
+    total+=item.qtd*item.preco;
+    itens+=item.qtd;
+    html+=`<div class="cart-item">
+      <span>${nome} x${item.qtd}</span>
+      <span>R$ ${item.qtd*item.preco}</span>
+    </div>`;
+  }
+  document.getElementById("cartItems").innerHTML=html;
+  document.getElementById("cartTotal").innerText="Total: R$ "+total;
+  document.getElementById("cartCount").innerText=itens;
+}
+
+function abrirCarrinho(){
+  document.getElementById("cartModal").style.display="flex";
+}
+
+function fecharCarrinho(){
+  document.getElementById("cartModal").style.display="none";
+}
+
+function finalizarPedido(){
+  let mensagem="Pedido:%0A";
+  let total=0;
+  for(let nome in carrinho){
+    let item=carrinho[nome];
+    mensagem+=`${nome} x${item.qtd}%0A`;
+    total+=item.qtd*item.preco;
+  }
+  mensagem+=`Total: R$ ${total}`;
+  window.open(`https://wa.me/5599999999999?text=${mensagem}`,"_blank");
+}
 </script>
 
 </body>
