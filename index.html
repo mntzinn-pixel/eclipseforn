@@ -44,7 +44,7 @@ body{
   padding:12px;
 }
 
-/* ===== CATEGORIA RGB (BORDA APENAS) ===== */
+/* ===== CATEGORIA RGB ===== */
 .categoria-titulo{
   grid-column:1/-1;
   margin:18px 0 8px;
@@ -57,48 +57,38 @@ body{
   position:relative;
   border-radius:12px;
   background:#0f172a;
+  z-index:0;
 }
 
 .categoria-titulo::before{
   content:"";
   position:absolute;
-  inset:0;
-  padding:2px;
-  border-radius:12px;
+  inset:-2px;
+  border-radius:14px;
   background:linear-gradient(45deg,red,orange,yellow,green,cyan,blue,violet,red);
   background-size:400% 400%;
   animation:rgbBorder 6s linear infinite;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events:none;
+  z-index:-1;
 }
 
-/* ===== CARD RGB (BORDA APENAS) ===== */
+/* CARD RGB */
 .card{
   position:relative;
   background:#0f172a;
   border-radius:16px;
   overflow:hidden;
+  z-index:0;
 }
 
 .card::before{
   content:"";
   position:absolute;
-  inset:0;
-  padding:2px;
-  border-radius:16px;
+  inset:-2px;
+  border-radius:18px;
   background:linear-gradient(45deg,red,orange,yellow,green,cyan,blue,violet,red);
   background-size:400% 400%;
   animation:rgbBorder 8s linear infinite;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events:none;
+  z-index:-1;
 }
 
 .card img{
@@ -112,6 +102,12 @@ body{
 .preco{
   color:#00ffff;
   font-weight:700;
+}
+
+.preco-antigo{
+  text-decoration:line-through;
+  color:#888;
+  font-size:12px;
 }
 
 .quantidade-box{
@@ -238,7 +234,7 @@ body{
 
 <script>
 var firebaseConfig = {
-  apiKey: "AIzaSyDAnBNdufwLlMW4bZHK0mUgncmIezNSMTg",
+  apiKey: "SUA_API_KEY",
   authDomain: "minha-loja-digital1.firebaseapp.com",
   projectId: "minha-loja-digital1"
 };
@@ -268,7 +264,8 @@ db.collection("produtos").onSnapshot((snapshot)=>{
         <img src="${p.imagem}">
         <div class="card-content">
           <div>${p.nome}</div>
-          <div class="preco">R$ ${p.preco}</div>
+          <div class="preco-antigo">R$ ${(p.preco*1.5).toFixed(2)}</div>
+          <div class="preco">R$ ${p.preco.toFixed(2)}</div>
           ${
             p.estoque>0?
             `<div class="quantidade-box">
@@ -306,11 +303,11 @@ function atualizarCarrinho(){
     itens+=item.qtd;
     html+=`<div class="cart-item">
       <span>${nome} x${item.qtd}</span>
-      <span>R$ ${item.qtd*item.preco}</span>
+      <span>R$ ${(item.qtd*item.preco).toFixed(2)}</span>
     </div>`;
   }
   document.getElementById("cartItems").innerHTML=html;
-  document.getElementById("cartTotal").innerText="Total: R$ "+total;
+  document.getElementById("cartTotal").innerText="Total: R$ "+total.toFixed(2);
   document.getElementById("cartCount").innerText=itens;
 }
 
@@ -330,7 +327,7 @@ function finalizarPedido(){
     mensagem+=`${nome} x${item.qtd}%0A`;
     total+=item.qtd*item.preco;
   }
-  mensagem+=`Total: R$ ${total}`;
+  mensagem+=`Total: R$ ${total.toFixed(2)}`;
   window.open(`https://wa.me/5599999999999?text=${mensagem}`,"_blank");
 }
 </script>
